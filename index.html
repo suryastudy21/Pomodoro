@@ -15,6 +15,10 @@
     }
 
     html, body {
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+
       width: 100%;
       height: 100%;
       margin: 0;
@@ -40,14 +44,12 @@
       text-align: center;
     }
 
-    /* Wrapper participates in layout */
     .time-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
-    /* Scaled visually only */
     .time {
       font-size: 200px;
       line-height: 1;
@@ -137,11 +139,14 @@
       margin-top: 0.8rem;
       text-align: right;
     }
+      ::selection { background: transparent; }
+    ::-moz-selection { background: transparent; }
   </style>
 </head>
 <body>
   <div class="timer">
     <button class="gear" id="edit" title="Settings">⚙</button>
+    <button class="gear" id="fullscreen" title="Toggle Fullscreen" style="right: calc(var(--gear-offset) + 3.8rem);">⛶</button>
 
     <div class="time-wrap" id="timeWrap">
       <div class="time" id="time"></div>
@@ -175,7 +180,36 @@
     </div>
   </div>
 
+  <audio id="bellSound" preload="auto">
+    <source src="bell-98033.mp3" type="audio/mpeg" />
+  </audio>
+
   <script>
+    const STORAGE_KEY = "sequenced_timer_state_v1";
+
+    function saveState() {
+      const state = {
+        blocks,
+        enablePause,
+        sizeLevel
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      try {
+        const state = JSON.parse(raw);
+        if (Array.isArray(state.blocks)) blocks = state.blocks;
+        if (typeof state.enablePause === "boolean") enablePause = state.enablePause;
+        if (typeof state.sizeLevel === "number") sizeLevel = state.sizeLevel;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     let blocks = [
       { label: "Deep Work", duration: 25 * 60, color: "#1e3a8a" },
       { label: "Break", duration: 5 * 60, color: "#065f46" },
@@ -184,6 +218,8 @@
 
     let enablePause = false;
     let sizeLevel = 100;
+
+    loadState();
 
     let currentIndex = 0;
     let remainingSeconds = blocks[0].duration;
@@ -200,6 +236,14 @@
     const closeEditorBtn = document.getElementById("closeEditor");
     const enablePauseCheckbox = document.getElementById("enablePause");
     const sizeSlider = document.getElementById("sizeSlider");
+    const bellSound = document.getElementById("bellSound");
+    const fullscreenBtn = document.getElementById("fullscreen");
+
+    function playBell() {
+      if (!bellSound) return;
+      bellSound.currentTime = 0;
+      bellSound.play().catch(() => {});
+    }
 
     function applySize() {
       const pad = (1 - sizeLevel / 100) * 3;
@@ -207,15 +251,13 @@
       document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
 
       const slider = sizeLevel / 100;
-
       const container = document.querySelector(".timer");
-      const time = timeEl;
 
       const availableWidth = container.clientWidth;
-      const availableHeight = container.clientHeight * 0.75; // reserve space for sequence
+      const availableHeight = container.clientHeight * 0.75;
 
-      const baseWidth = time.scrollWidth;
-      const baseHeight = time.scrollHeight;
+      const baseWidth = timeEl.scrollWidth;
+      const baseHeight = timeEl.scrollHeight;
 
       const scaleX = availableWidth / baseWidth;
       const scaleY = availableHeight / baseHeight;
@@ -224,9 +266,7 @@
       const minScale = 0.25;
       const scale = minScale + slider * (maxScale - minScale);
 
-      time.style.transform = `scale(${scale})`;
-
-      // CRITICAL: reserve layout space equal to scaled height
+      timeEl.style.transform = `scale(${scale})`;
       timeWrap.style.height = `${baseHeight * scale}px`;
     }
 
@@ -266,6 +306,7 @@
     }
 
     function advanceBlock() {
+      playBell();
       if (currentIndex < blocks.length - 1) {
         currentIndex++;
         loadBlock(currentIndex);
@@ -300,6 +341,18 @@
       }
     };
 
+    fullscreenBtn.onclick = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+
+    document.addEventListener("fullscreenchange", () => {
+      fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
+    });
+
     editBtn.onclick = () => {
       enablePauseCheckbox.checked = enablePause;
       sizeSlider.value = sizeLevel;
@@ -310,6 +363,7 @@
     closeEditorBtn.onclick = () => {
       enablePause = enablePauseCheckbox.checked;
       blocks = readEditor();
+      saveState();
       editor.style.display = "none";
       clearInterval(intervalId);
       running = false;
@@ -320,6 +374,7 @@
     sizeSlider.oninput = e => {
       sizeLevel = Number(e.target.value);
       applySize();
+      saveState();
     };
 
     addBlockBtn.onclick = () => {
