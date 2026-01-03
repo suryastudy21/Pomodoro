@@ -9,7 +9,6 @@
       --fg: #ffffff;
       --panel: #1f1f1f;
       --border: #333;
-
       --pad-scale: 0rem;
       --gear-offset: 0rem;
     }
@@ -18,7 +17,6 @@
       -webkit-user-select: none;
       -ms-user-select: none;
       user-select: none;
-
       width: 100%;
       height: 100%;
       margin: 0;
@@ -55,7 +53,6 @@
       line-height: 1;
       font-variant-numeric: tabular-nums;
       cursor: pointer;
-      user-select: none;
       white-space: nowrap;
       transform-origin: center center;
     }
@@ -139,7 +136,8 @@
       margin-top: 0.8rem;
       text-align: right;
     }
-      ::selection { background: transparent; }
+
+    ::selection { background: transparent; }
     ::-moz-selection { background: transparent; }
   </style>
 </head>
@@ -187,29 +185,6 @@
   <script>
     const STORAGE_KEY = "sequenced_timer_state_v1";
 
-    function saveState() {
-      const state = {
-        blocks,
-        enablePause,
-        sizeLevel
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
-      try {
-        const state = JSON.parse(raw);
-        if (Array.isArray(state.blocks)) blocks = state.blocks;
-        if (typeof state.enablePause === "boolean") enablePause = state.enablePause;
-        if (typeof state.sizeLevel === "number") sizeLevel = state.sizeLevel;
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
     let blocks = [
       { label: "Deep Work", duration: 25 * 60, color: "#1e3a8a" },
       { label: "Break", duration: 5 * 60, color: "#065f46" },
@@ -218,6 +193,21 @@
 
     let enablePause = false;
     let sizeLevel = 100;
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ blocks, enablePause, sizeLevel }));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const s = JSON.parse(raw);
+        if (Array.isArray(s.blocks)) blocks = s.blocks;
+        if (typeof s.enablePause === "boolean") enablePause = s.enablePause;
+        if (typeof s.sizeLevel === "number") sizeLevel = s.sizeLevel;
+      } catch {}
+    }
 
     loadState();
 
@@ -229,6 +219,7 @@
     const timeEl = document.getElementById("time");
     const timeWrap = document.getElementById("timeWrap");
     const editBtn = document.getElementById("edit");
+    const fullscreenBtn = document.getElementById("fullscreen");
     const sequenceEl = document.getElementById("sequence");
     const editor = document.getElementById("editor");
     const blockList = document.getElementById("blockList");
@@ -237,10 +228,8 @@
     const enablePauseCheckbox = document.getElementById("enablePause");
     const sizeSlider = document.getElementById("sizeSlider");
     const bellSound = document.getElementById("bellSound");
-    const fullscreenBtn = document.getElementById("fullscreen");
 
     function playBell() {
-      if (!bellSound) return;
       bellSound.currentTime = 0;
       bellSound.play().catch(() => {});
     }
@@ -250,56 +239,29 @@
       document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
       document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
 
-      const slider = sizeLevel / 100;
       const container = document.querySelector(".timer");
-
-      const availableWidth = container.clientWidth;
-      const availableHeight = container.clientHeight * 0.75;
-
       const baseWidth = timeEl.scrollWidth;
       const baseHeight = timeEl.scrollHeight;
-
-      const scaleX = availableWidth / baseWidth;
-      const scaleY = availableHeight / baseHeight;
-      const maxScale = Math.min(scaleX, scaleY);
-
-      const minScale = 0.25;
-      const scale = minScale + slider * (maxScale - minScale);
-
+      const scale = Math.min(container.clientWidth / baseWidth, (container.clientHeight * 0.75) / baseHeight);
       timeEl.style.transform = `scale(${scale})`;
       timeWrap.style.height = `${baseHeight * scale}px`;
     }
 
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    function formatTime(sec) {
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
     }
 
     function renderSequence() {
       editBtn.style.display = running ? "none" : "block";
-
-      sequenceEl.innerHTML = blocks.map((b, i) => {
-        const disabled = running && enablePause;
-        return `<button class="${i === currentIndex ? "active" : ""} ${disabled ? "disabled" : ""}" data-index="${i}">${b.label}</button>`;
-      }).join(" → ");
-
-      sequenceEl.querySelectorAll("button").forEach(btn => {
-        btn.onclick = () => {
-          if (running && enablePause) return;
-          clearInterval(intervalId);
-          running = false;
-          currentIndex = Number(btn.dataset.index);
-          loadBlock(currentIndex);
-        };
-      });
+      sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
+      [...sequenceEl.children].forEach((btn, i) => btn.onclick = () => { running = false; clearInterval(intervalId); currentIndex = i; loadBlock(i); });
     }
 
-    function loadBlock(index) {
-      const block = blocks[index];
-      if (!block) return;
-      document.body.style.backgroundColor = block.color;
-      remainingSeconds = block.duration;
+    function loadBlock(i) {
+      const b = blocks[i];
+      if (!b) return;
+      document.body.style.backgroundColor = b.color;
+      remainingSeconds = b.duration;
       timeEl.textContent = formatTime(remainingSeconds);
       applySize();
       renderSequence();
@@ -307,135 +269,108 @@
 
     function advanceBlock() {
       playBell();
-      if (currentIndex < blocks.length - 1) {
-        currentIndex++;
-        loadBlock(currentIndex);
-      } else {
-        clearInterval(intervalId);
-        running = false;
-        renderSequence();
-      }
+      if (currentIndex < blocks.length - 1) loadBlock(++currentIndex);
+      else { clearInterval(intervalId); running = false; renderSequence(); }
     }
 
     function tick() {
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
-        timeEl.textContent = formatTime(remainingSeconds);
-        applySize();
-      } else {
-        advanceBlock();
-      }
+      remainingSeconds > 0 ? (remainingSeconds--, timeEl.textContent = formatTime(remainingSeconds), applySize()) : advanceBlock();
     }
 
     timeEl.onclick = () => {
-      if (!running) {
-        tick();
-        intervalId = setInterval(tick, 1000);
-        running = true;
-        renderSequence();
-      } else {
-        if (enablePause) return;
-        clearInterval(intervalId);
-        running = false;
-        renderSequence();
-      }
+      running ? (enablePause || (clearInterval(intervalId), running = false)) : (tick(), intervalId = setInterval(tick, 1000), running = true);
+      renderSequence();
     };
 
-    fullscreenBtn.onclick = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-    };
+    fullscreenBtn.onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    document.addEventListener("fullscreenchange", () => fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block");
 
-    document.addEventListener("fullscreenchange", () => {
-      fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
-    });
-
-    editBtn.onclick = () => {
-      enablePauseCheckbox.checked = enablePause;
-      sizeSlider.value = sizeLevel;
-      renderEditor();
-      editor.style.display = "flex";
-    };
+    editBtn.onclick = () => { enablePauseCheckbox.checked = enablePause; sizeSlider.value = sizeLevel; renderEditor(); editor.style.display = "flex"; };
 
     closeEditorBtn.onclick = () => {
       enablePause = enablePauseCheckbox.checked;
       blocks = readEditor();
       saveState();
       editor.style.display = "none";
-      clearInterval(intervalId);
       running = false;
-      currentIndex = 0;
+      clearInterval(intervalId);
       loadBlock(0);
     };
 
-    sizeSlider.oninput = e => {
-      sizeLevel = Number(e.target.value);
-      applySize();
-      saveState();
-    };
-
+    sizeSlider.oninput = e => { sizeLevel = +e.target.value; applySize(); saveState(); };
     addBlockBtn.onclick = () => {
-      blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+      const lastRow = blockList.lastElementChild;
+      if (lastRow) {
+        const [l, m, c] = lastRow.querySelectorAll("input");
+        blockList.appendChild(blockRow({
+          label: l.value || "New Block",
+          duration: Number(m.value) * 60,
+          color: c.value
+        }));
+      } else {
+        blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+      }
     };
 
-    function renderEditor() {
-      blockList.innerHTML = "";
-      blocks.forEach(b => blockList.appendChild(blockRow(b)));
-    }
+    function renderEditor() { blockList.innerHTML = ""; blocks.forEach(b => blockList.appendChild(blockRow(b))); }
 
-    let draggedRow = null;
+    function blockRow(b) {
+      const r = document.createElement("div");
+      r.className = "block-row";
+      r.innerHTML = `<input value="${b.label}"><input type="number" value="${b.duration / 60}"><input type="color" value="${b.color}"><button>✕</button>`;
 
-    function enableDragAndDrop(row) {
-      row.draggable = true;
+      const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
 
-      row.addEventListener("dragstart", e => {
-        draggedRow = row;
-        row.style.opacity = "0.5";
-        e.dataTransfer.effectAllowed = "move";
-      });
-
-      row.addEventListener("dragend", () => {
-        draggedRow = null;
-        row.style.opacity = "";
-      });
-
-      row.addEventListener("dragover", e => e.preventDefault());
-
-      row.addEventListener("drop", e => {
-        e.preventDefault();
-        if (!draggedRow || draggedRow === row) return;
+      function findPreviousSameLabelRow() {
         const rows = [...blockList.children];
-        const from = rows.indexOf(draggedRow);
-        const to = rows.indexOf(row);
-        blockList.insertBefore(draggedRow, from < to ? row.nextSibling : row);
+        const idx = rows.indexOf(r);
+        const label = labelInput.value.trim() || "Untitled";
+        for (let i = idx - 1; i >= 0; i--) {
+          const [l] = rows[i].querySelectorAll("input");
+          if ((l.value.trim() || "Untitled") === label) return rows[i];
+        }
+        return null;
+      }
+
+      labelInput.addEventListener("input", () => {
+        const prev = findPreviousSameLabelRow();
+        if (!prev) return;
+        const [, pm, pc] = prev.querySelectorAll("input");
+        minutesInput.value = pm.value;
+        colorInput.value = pc.value;
       });
-    }
 
-    function blockRow(block) {
-      const row = document.createElement("div");
-      row.className = "block-row";
-      row.innerHTML = `
-        <input value="${block.label}" />
-        <input type="number" value="${Math.floor(block.duration / 60)}" min="0" />
-        <input type="color" value="${block.color}" />
-        <button>✕</button>`;
+      minutesInput.addEventListener("input", () => {
+        const label = labelInput.value.trim() || "Untitled";
+        [...blockList.children].forEach(row => {
+          const [l, m] = row.querySelectorAll("input");
+          if (row !== r && (l.value.trim() || "Untitled") === label && blockList.children.namedItem) {}
+        });
+      });
 
-      row.querySelector("button").onclick = () => row.remove();
-      enableDragAndDrop(row);
-      return row;
+      colorInput.addEventListener("input", () => {
+        const label = labelInput.value.trim() || "Untitled";
+        [...blockList.children].forEach(row => {
+          const [l, , c] = row.querySelectorAll("input");
+          if (row !== r && (l.value.trim() || "Untitled") === label && blockList.children.namedItem) {}
+        });
+      });
+
+      r.querySelector("button").onclick = () => r.remove();
+      return r;
     }
 
     function readEditor() {
-      return [...blockList.children].map(row => {
-        const [label, minutes, color] = row.querySelectorAll("input");
-        return {
-          label: label.value || "Untitled",
-          duration: Number(minutes.value) * 60,
-          color: color.value
-        };
+      const rows = [...blockList.children];
+      const canon = {};
+      rows.forEach(r => {
+        const [l, m, c] = r.querySelectorAll("input");
+        const label = l.value.trim() || "Untitled";
+        if (!canon[label]) canon[label] = { duration: +m.value * 60, color: c.value };
+      });
+      return rows.map(r => {
+        const l = r.querySelector("input").value.trim() || "Untitled";
+        return { label: l, ...canon[l] };
       });
     }
 
