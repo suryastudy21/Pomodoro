@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sequenced Interval Timer</title>
+  <style>
+    :root {
+      --bg: #111;
+      --fg: #ffffff;
+      --panel: #1f1f1f;
+      --border: #333;
+
+      /* size controls */
+      --pad-scale: 0rem;      /* dynamic inner padding */
+      --time-scale: 38;       /* dynamic vw/vh multiplier */
+      --gear-offset: 0rem;    /* dynamic */
+    }
+
+    body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+    }
+
+    .timer {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      padding: var(--pad-scale);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .time {
+      font-size: min(calc(var(--time-scale) * 1vw), calc(var(--time-scale) * 1vh));
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .gear {
+      position: absolute;
+      top: var(--gear-offset);
+      right: var(--gear-offset);
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 3.6rem;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .gear:hover { opacity: 1; }
+
+    .sequence {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+
+    .sequence button {
+      background: none;
+      border: none;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .sequence button.active {
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .sequence button.disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--panel);
+      padding: 1.2rem;
+      border: 1px solid var(--border);
+      width: 520px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .setting {
+      margin: 0.8rem 0;
+      font-size: 0.9rem;
+    }
+
+    .setting input[type="range"] { width: 100%; }
+
+    .block-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr auto;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .block-row input { padding: 0.3rem; }
+    .block-row button { cursor: pointer; }
+
+    .modal-actions {
+      margin-top: 0.8rem;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer">
+    <button class="gear" id="edit" title="Settings">⚙</button>
+    <div class="time" id="time"></div>
+    <div class="sequence" id="sequence"></div>
+  </div>
+
+  <div class="modal" id="editor">
+    <div class="modal-content">
+      <h3>Sequence & Settings</h3>
+
+      <div class="setting">
+        <label><input type="checkbox" id="enablePause" /> Enable pause</label>
+      </div>
+
+      <div class="setting">
+        <label>Size
+          <input type="range" id="sizeSlider" min="0" max="100" />
+        </label>
+      </div>
+
+      <hr />
+
+      <div id="blockList"></div>
+      <button id="addBlock">Add Block</button>
+
+      <div class="modal-actions">
+        <button id="closeEditor">Apply & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let blocks = [
+      { label: "Deep Work", duration: 25 * 60, color: "#1e3a8a" },
+      { label: "Break", duration: 5 * 60, color: "#065f46" },
+      { label: "Reading", duration: 30 * 60, color: "#312e81" }
+    ];
+
+    let enablePause = false;
+    let sizeLevel = 100;
+
+    let currentIndex = 0;
+    let remainingSeconds = blocks[0].duration;
+    let intervalId = null;
+    let running = false;
+
+    const timeEl = document.getElementById("time");
+    const editBtn = document.getElementById("edit");
+    const sequenceEl = document.getElementById("sequence");
+    const editor = document.getElementById("editor");
+    const blockList = document.getElementById("blockList");
+    const addBlockBtn = document.getElementById("addBlock");
+    const closeEditorBtn = document.getElementById("closeEditor");
+    const enablePauseCheckbox = document.getElementById("enablePause");
+    const sizeSlider = document.getElementById("sizeSlider");
+
+    function applySize() {
+      // padding: 3rem -> 0rem (true full-screen at max)
+      const pad = (1 - sizeLevel / 100) * 3;
+      document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
+
+      // gear offset follows padding
+      document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
+
+      // font scale: 14 -> 38
+      const fontScale = 14 + (sizeLevel / 100) * 24;
+      document.documentElement.style.setProperty("--time-scale", fontScale);
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function renderSequence() {
+      editBtn.style.display = running ? "none" : "block";
+
+      sequenceEl.innerHTML = blocks.map((b, i) => {
+        const disabled = running && enablePause;
+        return `<button class="${i === currentIndex ? "active" : ""} ${disabled ? "disabled" : ""}" data-index="${i}">${b.label}</button>`;
+      }).join(" → ");
+
+      sequenceEl.querySelectorAll("button").forEach(btn => {
+        btn.onclick = () => {
+          if (running && enablePause) return;
+          clearInterval(intervalId);
+          running = false;
+          currentIndex = Number(btn.dataset.index);
+          loadBlock(currentIndex);
+        };
+      });
+    }
+
+    function loadBlock(index) {
+      const block = blocks[index];
+      if (!block) return;
+      document.body.style.backgroundColor = block.color;
+      remainingSeconds = block.duration;
+      timeEl.textContent = formatTime(remainingSeconds);
+      renderSequence();
+    }
+
+    function advanceBlock() {
+      if (currentIndex < blocks.length - 1) {
+        currentIndex++;
+        loadBlock(currentIndex);
+      } else {
+        clearInterval(intervalId);
+        running = false;
+        renderSequence();
+      }
+    }
+
+    function tick() {
+      if (remainingSeconds > 0) {
+        remainingSeconds--;
+        timeEl.textContent = formatTime(remainingSeconds);
+      } else {
+        advanceBlock();
+      }
+    }
+
+    timeEl.onclick = () => {
+      if (!running) {
+        tick();
+        intervalId = setInterval(tick, 1000);
+        running = true;
+        renderSequence();
+      } else {
+        if (enablePause) return;
+        clearInterval(intervalId);
+        running = false;
+        renderSequence();
+      }
+    };
+
+    editBtn.onclick = () => {
+      enablePauseCheckbox.checked = enablePause;
+      sizeSlider.value = sizeLevel;
+      renderEditor();
+      editor.style.display = "flex";
+    };
+
+    closeEditorBtn.onclick = () => {
+      enablePause = enablePauseCheckbox.checked;
+      blocks = readEditor();
+      editor.style.display = "none";
+      clearInterval(intervalId);
+      running = false;
+      currentIndex = 0;
+      loadBlock(0);
+    };
+
+    sizeSlider.oninput = e => {
+      sizeLevel = Number(e.target.value);
+      applySize();
+    };
+
+    addBlockBtn.onclick = () => {
+      blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+    };
+
+    function renderEditor() {
+      blockList.innerHTML = "";
+      blocks.forEach(b => blockList.appendChild(blockRow(b)));
+    }
+
+    let draggedRow = null;
+
+    function enableDragAndDrop(row) {
+      row.draggable = true;
+
+      row.addEventListener("dragstart", e => {
+        draggedRow = row;
+        row.style.opacity = "0.5";
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      row.addEventListener("dragend", () => {
+        draggedRow = null;
+        row.style.opacity = "";
+      });
+
+      row.addEventListener("dragover", e => e.preventDefault());
+
+      row.addEventListener("drop", e => {
+        e.preventDefault();
+        if (!draggedRow || draggedRow === row) return;
+        const rows = [...blockList.children];
+        const from = rows.indexOf(draggedRow);
+        const to = rows.indexOf(row);
+        blockList.insertBefore(draggedRow, from < to ? row.nextSibling : row);
+      });
+    }
+
+    function blockRow(block) {
+      const row = document.createElement("div");
+      row.className = "block-row";
+      row.innerHTML = `
+        <input value="${block.label}" />
+        <input type="number" value="${Math.floor(block.duration / 60)}" min="0" />
+        <input type="color" value="${block.color}" />
+        <button>✕</button>`;
+
+      row.querySelector("button").onclick = () => row.remove();
+      enableDragAndDrop(row);
+      return row;
+    }
+
+    function readEditor() {
+      return [...blockList.children].map(row => {
+        const [label, minutes, color] = row.querySelectorAll("input");
+        return {
+          label: label.value || "Untitled",
+          duration: Number(minutes.value) * 60,
+          color: color.value
+        };
+      });
+    }
+
+    applySize();
+    loadBlock(0);
+  </script>
+</body>
+</html>
