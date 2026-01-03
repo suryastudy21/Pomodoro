@@ -10,16 +10,17 @@
       --panel: #1f1f1f;
       --border: #333;
 
-      /* size controls */
-      --pad-scale: 0rem;      /* dynamic inner padding */
-      --time-scale: 38;       /* dynamic vw/vh multiplier */
-      --gear-offset: 0rem;    /* dynamic */
+      --pad-scale: 0rem;
+      --gear-offset: 0rem;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
     }
 
     body {
-      margin: 0;
-      width: 100vw;
-      height: 100vh;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background-color: var(--bg);
       color: var(--fg);
@@ -28,8 +29,8 @@
 
     .timer {
       position: relative;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       padding: var(--pad-scale);
       box-sizing: border-box;
       display: flex;
@@ -39,12 +40,22 @@
       text-align: center;
     }
 
+    /* Wrapper participates in layout */
+    .time-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Scaled visually only */
     .time {
-      font-size: min(calc(var(--time-scale) * 1vw), calc(var(--time-scale) * 1vh));
+      font-size: 200px;
       line-height: 1;
       font-variant-numeric: tabular-nums;
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
+      transform-origin: center center;
     }
 
     .gear {
@@ -87,7 +98,6 @@
       cursor: default;
     }
 
-    /* Modal */
     .modal {
       position: fixed;
       inset: 0;
@@ -132,7 +142,11 @@
 <body>
   <div class="timer">
     <button class="gear" id="edit" title="Settings">⚙</button>
-    <div class="time" id="time"></div>
+
+    <div class="time-wrap" id="timeWrap">
+      <div class="time" id="time"></div>
+    </div>
+
     <div class="sequence" id="sequence"></div>
   </div>
 
@@ -177,6 +191,7 @@
     let running = false;
 
     const timeEl = document.getElementById("time");
+    const timeWrap = document.getElementById("timeWrap");
     const editBtn = document.getElementById("edit");
     const sequenceEl = document.getElementById("sequence");
     const editor = document.getElementById("editor");
@@ -187,16 +202,32 @@
     const sizeSlider = document.getElementById("sizeSlider");
 
     function applySize() {
-      // padding: 3rem -> 0rem (true full-screen at max)
       const pad = (1 - sizeLevel / 100) * 3;
       document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
-
-      // gear offset follows padding
       document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
 
-      // font scale: 14 -> 38
-      const fontScale = 14 + (sizeLevel / 100) * 24;
-      document.documentElement.style.setProperty("--time-scale", fontScale);
+      const slider = sizeLevel / 100;
+
+      const container = document.querySelector(".timer");
+      const time = timeEl;
+
+      const availableWidth = container.clientWidth;
+      const availableHeight = container.clientHeight * 0.75; // reserve space for sequence
+
+      const baseWidth = time.scrollWidth;
+      const baseHeight = time.scrollHeight;
+
+      const scaleX = availableWidth / baseWidth;
+      const scaleY = availableHeight / baseHeight;
+      const maxScale = Math.min(scaleX, scaleY);
+
+      const minScale = 0.25;
+      const scale = minScale + slider * (maxScale - minScale);
+
+      time.style.transform = `scale(${scale})`;
+
+      // CRITICAL: reserve layout space equal to scaled height
+      timeWrap.style.height = `${baseHeight * scale}px`;
     }
 
     function formatTime(seconds) {
@@ -230,6 +261,7 @@
       document.body.style.backgroundColor = block.color;
       remainingSeconds = block.duration;
       timeEl.textContent = formatTime(remainingSeconds);
+      applySize();
       renderSequence();
     }
 
@@ -248,6 +280,7 @@
       if (remainingSeconds > 0) {
         remainingSeconds--;
         timeEl.textContent = formatTime(remainingSeconds);
+        applySize();
       } else {
         advanceBlock();
       }
