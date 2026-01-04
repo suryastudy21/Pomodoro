@@ -75,7 +75,10 @@
       margin-top: 1rem;
       font-size: 0.9rem;
       opacity: 0.85;
-      white-space: nowrap;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
     }
 
     .sequence button {
@@ -123,6 +126,7 @@
     .setting input[type="range"] { width: 100%; }
 
     .block-row {
+      cursor: grab;
       display: grid;
       grid-template-columns: 1.5fr 1fr 1fr auto;
       gap: 0.4rem;
@@ -186,9 +190,16 @@
     const STORAGE_KEY = "sequenced_timer_state_v1";
 
     let blocks = [
-      { label: "Deep Work", duration: 25 * 60, color: "#1e3a8a" },
-      { label: "Break", duration: 5 * 60, color: "#065f46" },
-      { label: "Reading", duration: 30 * 60, color: "#312e81" }
+      { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
+      { label: "Focus", duration: 35 * 60, color: "#000000" },
+      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+      { label: "Focus", duration: 35 * 60, color: "#000000" },
+      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+      { label: "Focus", duration: 35 * 60, color: "#000000" },
+      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+      { label: "Focus", duration: 35 * 60, color: "#000000" },
+      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+      { label: "Focus", duration: 35 * 60, color: "#000000" }
     ];
 
     let enablePause = false;
@@ -317,6 +328,7 @@
     function blockRow(b) {
       const r = document.createElement("div");
       r.className = "block-row";
+      r.draggable = true;
       r.innerHTML = `<input value="${b.label}"><input type="number" value="${b.duration / 60}"><input type="color" value="${b.color}"><button>✕</button>`;
 
       const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
@@ -340,20 +352,27 @@
         colorInput.value = pc.value;
       });
 
-      minutesInput.addEventListener("input", () => {
-        const label = labelInput.value.trim() || "Untitled";
-        [...blockList.children].forEach(row => {
-          const [l, m] = row.querySelectorAll("input");
-          if (row !== r && (l.value.trim() || "Untitled") === label && blockList.children.namedItem) {}
-        });
+            r.addEventListener("dragstart", e => {
+        draggedRow = r;
+        r.style.opacity = "0.5";
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", "");
       });
 
-      colorInput.addEventListener("input", () => {
-        const label = labelInput.value.trim() || "Untitled";
-        [...blockList.children].forEach(row => {
-          const [l, , c] = row.querySelectorAll("input");
-          if (row !== r && (l.value.trim() || "Untitled") === label && blockList.children.namedItem) {}
-        });
+      r.addEventListener("dragend", () => {
+        r.style.opacity = "";
+        draggedRow = null;
+      });
+
+      r.addEventListener("dragover", e => e.preventDefault());
+
+      r.addEventListener("drop", e => {
+        e.preventDefault();
+        if (!draggedRow || draggedRow === r) return;
+        const rows = [...blockList.children];
+        const from = rows.indexOf(draggedRow);
+        const to = rows.indexOf(r);
+        blockList.insertBefore(draggedRow, from < to ? r.nextSibling : r);
       });
 
       r.querySelector("button").onclick = () => r.remove();
