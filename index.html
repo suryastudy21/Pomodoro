@@ -33,6 +33,14 @@
       overflow: hidden;
     }
 
+    #bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: var(--bg);
+      will-change: background-color;
+    }
+
     .timer {
       position: relative;
       width: 100%;
@@ -58,14 +66,24 @@
       padding: 0;
       color: inherit;
       font: inherit;
-
       font-size: 200px;
       line-height: 1;
       font-variant-numeric: tabular-nums;
       cursor: pointer;
       white-space: nowrap;
       transform-origin: center center;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
+
+    .time:focus,
+    .time:active {
+      outline: none;
+      background-color: transparent;
+    }
+
+    
 
     .gear {
       position: absolute;
@@ -107,8 +125,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(6px);
-      display: none;
+            display: none;
       align-items: center;
       justify-content: center;
     }
@@ -372,25 +389,10 @@
   -webkit-touch-callout: none;
 }
 
-.time {
-      background: none;
-      border: none;
-      padding: 0;
-      color: inherit;
-      font: inherit;
-
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: manipulation;
-}
 
 
-.time {
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
+
+
 
 .time:focus {
   outline: none;
@@ -469,6 +471,7 @@ button:active,
 </style>
 </head>
 <body>
+  <div id="bg-layer"></div>
 	
   <div class="timer">
     <button class="gear icon-btn" id="edit" title="Settings"><?xml version="1.0" encoding="iso-8859-1"?>
@@ -590,7 +593,8 @@ button:active,
 
       let currentIndex = 0;
       let remainingSeconds = blocks[0].duration;
-      let intervalId = null;
+      let endTimestamp = 0;
+      let rafId = null;
       let running = false;
       let draggedRow = null;
 
@@ -624,8 +628,8 @@ button:active,
 
 function measureBase() {
         timeEl.style.transform = "scale(1)";
-        baseWidth = timeEl.scrollWidth;
-        baseHeight = timeEl.scrollHeight;
+        baseWidth = timeEl.offsetWidth;
+        baseHeight = timeEl.offsetHeight;
       }
 
       function applySize() {
@@ -633,13 +637,9 @@ function measureBase() {
         document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
         document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
 
+        if (!baseWidth || !baseHeight) return;
+
         const container = document.querySelector(".timer");
-
-        // Measure unscaled base size safely
-        timeEl.style.transform = "scale(1)";
-        const baseWidth = timeEl.scrollWidth;
-        const baseHeight = timeEl.scrollHeight;
-
         const fitScale = Math.min(
           container.clientWidth / baseWidth,
           (container.clientHeight * 0.75) / baseHeight
@@ -682,7 +682,7 @@ function measureBase() {
       function loadBlock(i) {
         const b = blocks[i];
         if (!b) return;
-        document.body.style.backgroundColor = b.color;
+        document.getElementById("bg-layer").style.backgroundColor = b.color;
         remainingSeconds = b.duration;
         timeEl.textContent = formatTime(remainingSeconds);
         applySize();
@@ -700,24 +700,35 @@ function measureBase() {
         }
       }
 
-      function tick() {
-        if (remainingSeconds > 0) {
-          remainingSeconds--;
+      function updateTimer() {
+        if (!running) return;
+
+        const now = Date.now();
+        const remaining = Math.max(0, Math.round((endTimestamp - now) / 1000));
+
+        if (remaining !== remainingSeconds) {
+          remainingSeconds = remaining;
           timeEl.textContent = formatTime(remainingSeconds);
-        } else {
-          advanceBlock();
         }
+
+        if (remainingSeconds === 0) {
+          running = false;
+          advanceBlock();
+          return;
+        }
+
+        rafId = requestAnimationFrame(updateTimer);
       }
 
       timeEl.onclick = () => {
         if (running) {
           if (enablePause) return;
-          clearInterval(intervalId);
           running = false;
+          cancelAnimationFrame(rafId);
         } else {
-          tick();
-          intervalId = setInterval(tick, 1000);
+          endTimestamp = Date.now() + remainingSeconds * 1000;
           running = true;
+          updateTimer();
         }
         renderSequence();
       };
@@ -911,9 +922,22 @@ function measureBase() {
         });
       }
 
-      measureBase();
-      applySize();
       loadBlock(0);
+      requestAnimationFrame(() => {
+        measureBase();
+        applySize();
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && running) {
+          remainingSeconds = Math.max(
+            0,
+            Math.round((endTimestamp - Date.now()) / 1000)
+          );
+          running = false;
+          cancelAnimationFrame(rafId);
+        }
+      });
     });
   </script>
 </body>
