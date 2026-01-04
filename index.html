@@ -427,7 +427,7 @@
     </div>
   </div>
 
-  <audio id="bellSound" preload="none">
+  <audio id="bellSound" preload="auto">
     <source src="bell-98033.mp3" type="audio/mpeg" />
   </audio>
 
@@ -473,7 +473,6 @@
       let remainingSeconds = blocks[0].duration;
       let intervalId = null;
       let running = false;
-      let pendingBell = false;
       let draggedRow = null;
 
       const timeEl = document.getElementById("time");
@@ -553,7 +552,7 @@ function applySize() {
       }
 
       function advanceBlock() {
-        pendingBell = true;
+        playBell();
         if (currentIndex < blocks.length - 1) {
           loadBlock(++currentIndex);
         } else {
@@ -574,21 +573,6 @@ function applySize() {
       }
 
       timeEl.onclick = () => {
-
-        if (pendingBell) {
-          bellSound.currentTime = 0;
-          bellSound.play().catch(() => {});
-          pendingBell = false;
-        }
-
-        // Unlock audio for Android 6 and older mobile browsers
-        if (bellSound.paused) {
-          bellSound.play().then(() => {
-            bellSound.pause();
-            bellSound.currentTime = 0;
-          }).catch(() => {});
-        }
-
         if (running) {
           if (enablePause) return;
           clearInterval(intervalId);
