@@ -502,10 +502,57 @@
       };
 
       addBlockBtn.onclick = () => {
-        blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+        const rows = [...blockList.children];
+        if (rows.length === 0) {
+          blockList.appendChild(
+            blockRow({ label: "New Block", duration: 300, color: "#444" })
+          );
+          return;
+        }
+
+        const last = rows[rows.length - 1];
+        const [l, m, c] = last.querySelectorAll("input");
+
+        blockList.appendChild(
+          blockRow({
+            label: l.value,
+            duration: +m.value * 60,
+            color: c.value
+          })
+        );
+
+        syncBlockProperties();
       };
 
-      function renderEditor() {
+      
+      function syncBlockProperties() {
+        const seen = new Map();
+
+        [...blockList.children].forEach(row => {
+          const inputs = row.querySelectorAll("input");
+          const labelInput = inputs[0];
+          const durationInput = inputs[1];
+          const colorInput = inputs[2];
+
+          const name = labelInput.value.trim();
+          if (!name) return;
+
+          if (!seen.has(name)) {
+            seen.set(name, {
+              duration: durationInput.value,
+              color: colorInput.value
+            });
+          } else {
+            const canon = seen.get(name);
+            if (durationInput.value !== canon.duration)
+              durationInput.value = canon.duration;
+            if (colorInput.value !== canon.color)
+              colorInput.value = canon.color;
+          }
+        });
+      }
+
+function renderEditor() {
         blockList.innerHTML = "";
         blocks.forEach(b => blockList.appendChild(blockRow(b)));
       }
@@ -543,6 +590,13 @@
           e.preventDefault();
           r.remove();
         };
+
+        const inputs = r.querySelectorAll("input");
+        inputs.forEach(inp => {
+          inp.addEventListener("input", () => {
+            syncBlockProperties();
+          });
+        });
 
         return r;
       }
