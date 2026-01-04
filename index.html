@@ -53,6 +53,12 @@
     }
 
     .time {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+
       font-size: 200px;
       line-height: 1;
       font-variant-numeric: tabular-nums;
@@ -367,9 +373,54 @@
 }
 
 .time {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
+}
+
+
+.time {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.time:focus {
+  outline: none;
+}
+
+.time:active {
+  background-color: transparent;
+}
+
+
+/* Android tap highlight suppression for all interactive elements */
+button,
+.icon-btn,
+.toggle-row,
+.block-row button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus,
+.icon-btn:focus,
+.toggle-row:focus,
+.block-row button:focus {
+  outline: none;
+}
+
+button:active,
+.icon-btn:active,
+.toggle-row:active,
+.block-row button:active {
+  background-color: transparent;
 }
 
 </style>
@@ -405,7 +456,7 @@
 </svg></button>
 
     <div class="time-wrap" id="timeWrap">
-      <div class="time" id="time"></div>
+      <button class="time" id="time" type="button"></button>
     </div>
 
     <div class="sequence" id="sequence"></div>
