@@ -427,7 +427,7 @@
     </div>
   </div>
 
-  <audio id="bellSound" preload="auto">
+  <audio id="bellSound" preload="none">
     <source src="bell-98033.mp3" type="audio/mpeg" />
   </audio>
 
@@ -573,6 +573,15 @@ function applySize() {
       }
 
       timeEl.onclick = () => {
+
+        // Unlock audio for Android 6 and older mobile browsers
+        if (bellSound.paused) {
+          bellSound.play().then(() => {
+            bellSound.pause();
+            bellSound.currentTime = 0;
+          }).catch(() => {});
+        }
+
         if (running) {
           if (enablePause) return;
           clearInterval(intervalId);
