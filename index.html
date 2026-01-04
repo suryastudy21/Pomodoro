@@ -493,10 +493,9 @@
       let draggedRow = null;
 
       const timeEl = document.getElementById("time");
+      timeEl.addEventListener("selectstart", e => e.preventDefault());
 
-      timeEl.addEventListener("mousedown", e => e.preventDefault());
-      timeEl.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
-
+      
       const timeWrap = document.getElementById("timeWrap");
       const editBtn = document.getElementById("edit");
       const fullscreenBtn = document.getElementById("fullscreen");
