@@ -473,6 +473,7 @@
       let remainingSeconds = blocks[0].duration;
       let intervalId = null;
       let running = false;
+      let pendingBell = false;
       let draggedRow = null;
 
       const timeEl = document.getElementById("time");
@@ -552,7 +553,7 @@ function applySize() {
       }
 
       function advanceBlock() {
-        playBell();
+        pendingBell = true;
         if (currentIndex < blocks.length - 1) {
           loadBlock(++currentIndex);
         } else {
@@ -573,6 +574,12 @@ function applySize() {
       }
 
       timeEl.onclick = () => {
+
+        if (pendingBell) {
+          bellSound.currentTime = 0;
+          bellSound.play().catch(() => {});
+          pendingBell = false;
+        }
 
         // Unlock audio for Android 6 and older mobile browsers
         if (bellSound.paused) {
