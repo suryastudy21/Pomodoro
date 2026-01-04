@@ -408,6 +408,10 @@
       const enablePauseCheckbox = document.getElementById("enablePause");
       const sizeSlider = document.getElementById("sizeSlider");
       const bellSound = document.getElementById("bellSound");
+      function updateFullscreenUI() {
+        fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
+      }
+
       function toggleFullscreen() {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
@@ -419,6 +423,8 @@
       fullscreenBtn.onclick = () => {
         toggleFullscreen();
       };
+
+      document.addEventListener("fullscreenchange", updateFullscreenUI);
 
 
       function applySize() {
