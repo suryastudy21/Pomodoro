@@ -493,7 +493,14 @@
         bellSound.play().catch(() => {});
       }
 
-      function applySize() {
+      
+      function applyBlockColor(row, color) {
+        row.style.backgroundColor = "rgba(255,255,255,0.04)";
+        row.style.backgroundImage = `linear-gradient(${color}, ${color})`;
+        row.style.backgroundBlendMode = "overlay";
+      }
+
+function applySize() {
         const pad = (1 - sizeLevel / 100) * 3;
         document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
         document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
@@ -635,13 +642,14 @@
       function renderEditor() {
         blockList.innerHTML = "";
         blocks.forEach(b => blockList.appendChild(blockRow(b)));
+        setTimeout(() => updateCanonicalState(), 0);
       }
 
       function blockRow(b) {
         const r = document.createElement("div");
         r.className = "block-row";
         r.draggable = true;
-        r.style.backgroundColor = b.color;
+        applyBlockColor(r, b.color);
         r.innerHTML = `
           <div class="move-controls">
             <button class="up" aria-label="Move up">
@@ -658,26 +666,48 @@
           <input value="${b.label}">
           <input type="number" value="${b.duration / 60}" min="0" step="1">
           <input type="color" value="${b.color}">
-          <button>✕</button>`;
+          <button class="delete-block" aria-label="Delete block">✕</button>`;
 
         const [upBtn, downBtn] = r.querySelectorAll(".up, .down");
         const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
 
-        // Apply and live-update block background color
-        r.style.backgroundColor = colorInput.value;
+        // Apply and live-update block background color (dual-layer for readability)
+        applyBlockColor(r, colorInput.value);
         colorInput.addEventListener("input", () => {
-          r.style.backgroundColor = colorInput.value;
+          applyBlockColor(r, colorInput.value);
         });
 
-        upBtn.onclick = () => {
+        upBtn.onclick = e => {
+          e.stopPropagation();
           const prev = r.previousElementSibling;
           if (prev) blockList.insertBefore(r, prev);
         };
 
-        downBtn.onclick = () => {
+        downBtn.onclick = e => {
+          e.stopPropagation();
           const next = r.nextElementSibling;
           if (next) blockList.insertBefore(next, r);
         };
+
+        function isCanonicalRow() {
+          const rows = [...blockList.children];
+          const idx = rows.indexOf(r);
+          const label = labelInput.value.trim() || "Untitled";
+          for (let i = 0; i < idx; i++) {
+            const [l] = rows[i].querySelectorAll("input");
+            if ((l.value.trim() || "Untitled") === label) return false;
+          }
+          return true;
+        }
+
+        function updateCanonicalState() {
+          const canonical = isCanonicalRow();
+          minutesInput.disabled = !canonical;
+          colorInput.disabled = !canonical;
+          minutesInput.style.opacity = canonical ? "1" : "0.4";
+          colorInput.style.opacity = canonical ? "1" : "0.4";
+        }
+
 
         function findPreviousSameLabelRow() {
           const rows = [...blockList.children];
@@ -691,6 +721,7 @@
         }
 
         labelInput.addEventListener("input", () => {
+          updateCanonicalState();
           const prev = findPreviousSameLabelRow();
           if (!prev) return;
           const [, pm, pc] = prev.querySelectorAll("input");
@@ -721,7 +752,8 @@
           blockList.insertBefore(draggedRow, from < to ? r.nextSibling : r);
         });
 
-        r.querySelector("button:last-child").onclick = () => r.remove();
+        r.querySelector(".delete-block").onclick = () => r.remove();
+        updateCanonicalState();
         return r;
       }
 
