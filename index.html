@@ -408,6 +408,18 @@
       const enablePauseCheckbox = document.getElementById("enablePause");
       const sizeSlider = document.getElementById("sizeSlider");
       const bellSound = document.getElementById("bellSound");
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+
+      fullscreenBtn.onclick = () => {
+        toggleFullscreen();
+      };
+
 
       function applySize() {
         const pad = (1 - sizeLevel / 100) * 3;
