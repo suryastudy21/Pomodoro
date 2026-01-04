@@ -437,6 +437,35 @@ button:active,
   }
 }
 
+
+/* Modal scroll performance optimizations for older touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .modal-content {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 1.2rem;
+  }
+
+  .section {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .setting {
+    gap: 0.2rem;
+  }
+}
+
+.modal-content {
+  -webkit-overflow-scrolling: touch;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .block-row:hover {
+    background: rgba(255,255,255,0.07);
+  }
+}
+
 </style>
 </head>
 <body>
