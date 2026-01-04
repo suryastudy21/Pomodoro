@@ -360,7 +360,19 @@
       fill: currentColor;
       stroke: currentColor;
     }
-  </style>
+  
+* {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.time {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+</style>
 </head>
 <body>
 	
@@ -481,6 +493,10 @@
       let draggedRow = null;
 
       const timeEl = document.getElementById("time");
+
+      timeEl.addEventListener("mousedown", e => e.preventDefault());
+      timeEl.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+
       const timeWrap = document.getElementById("timeWrap");
       const editBtn = document.getElementById("edit");
       const fullscreenBtn = document.getElementById("fullscreen");
