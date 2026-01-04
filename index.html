@@ -423,6 +423,20 @@ button:active,
   background-color: transparent;
 }
 
+
+@media (hover: none) and (pointer: coarse) {
+  .modal {
+    backdrop-filter: none;
+    background: rgba(0,0,0,0.8);
+  }
+}
+
+@media (hover: hover) {
+  .block-row {
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -519,6 +533,14 @@ button:active,
       let enablePause = false;
       let sizeLevel = 100;
       let userScale = 1;
+      let baseWidth = 0;
+      let baseHeight = 0;
+
+      let saveTimeout;
+      function saveStateDebounced() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveState, 300);
+      }
 
       function saveState() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ blocks, enablePause, sizeLevel }));
@@ -571,7 +593,13 @@ button:active,
         row.style.backgroundBlendMode = "overlay";
       }
 
-function applySize() {
+function measureBase() {
+        timeEl.style.transform = "scale(1)";
+        baseWidth = timeEl.scrollWidth;
+        baseHeight = timeEl.scrollHeight;
+      }
+
+      function applySize() {
         const pad = (1 - sizeLevel / 100) * 3;
         document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
         document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
@@ -637,7 +665,6 @@ function applySize() {
         if (remainingSeconds > 0) {
           remainingSeconds--;
           timeEl.textContent = formatTime(remainingSeconds);
-          applySize();
         } else {
           advanceBlock();
         }
@@ -681,7 +708,7 @@ function applySize() {
       closeEditorBtn.onclick = () => {
         enablePause = enablePauseCheckbox.checked;
         blocks = readEditor();
-        saveState();
+        saveStateDebounced();
         editor.style.display = "none";
         running = false;
         clearInterval(intervalId);
@@ -693,7 +720,7 @@ function applySize() {
         // Map slider to a perceptual scale range (0.25x – 1.0x)
         userScale = 0.25 + (sizeLevel / 100) * 0.75;
         applySize();
-        saveState();
+        saveStateDebounced();
       };
 
       addBlockBtn.onclick = () => {
@@ -719,7 +746,7 @@ function applySize() {
       function blockRow(b) {
         const r = document.createElement("div");
         r.className = "block-row";
-        r.draggable = true;
+        r.draggable = !('ontouchstart' in window);
         applyBlockColor(r, b.color);
         r.innerHTML = `
           <div class="move-controls">
@@ -842,6 +869,7 @@ function applySize() {
         });
       }
 
+      measureBase();
       applySize();
       loadBlock(0);
     });
