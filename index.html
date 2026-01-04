@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-
   <meta charset="UTF-8" />
   <title>Sequenced Interval Timer</title>
   <style>
@@ -435,10 +432,6 @@
   </audio>
 
   <script>
-	  if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
-}
-
     document.addEventListener("DOMContentLoaded", () => {
       const STORAGE_KEY = "sequenced_timer_state_v1";
 
