@@ -75,10 +75,8 @@
       margin-top: 1rem;
       font-size: 0.9rem;
       opacity: 0.85;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.4rem;
+      white-space: normal;
+      text-align: center;
     }
 
     .sequence button {
@@ -95,15 +93,11 @@
       text-decoration: underline;
     }
 
-    .sequence button.disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -111,35 +105,241 @@
 
     .modal-content {
       background: var(--panel);
-      padding: 1.2rem;
-      border: 1px solid var(--border);
-      width: 520px;
+      padding: 1.6rem 1.6rem 1.8rem;
+      border: none;
+      border-radius: 16px;
+      width: 540px;
       max-height: 80vh;
       overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .close-x {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 1.6rem;
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 0.4rem;
+      border-radius: 50%;
+      z-index: 3;
+    }
+
+    .close-x:hover { opacity: 1; }
+
+    .section {
+      margin-bottom: 1.6rem;
+      padding: 1rem 1rem 1.2rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .section h3 {
+      margin: 0 0 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.75;
     }
 
     .setting {
-      margin: 0.8rem 0;
-      font-size: 0.9rem;
+      margin: 0.9rem 0;
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
     }
 
-    .setting input[type="range"] { width: 100%; }
+    .hint {
+      font-size: 0.75rem;
+      opacity: 0.6;
+      margin-top: 0.1rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+    }
+
+    .toggle-row input {
+      display: none;
+    }
+
+    .toggle {
+      width: 42px;
+      height: 24px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+      position: relative;
+      transition: background 0.2s ease;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+    }
+
+    .toggle-row input:checked + .toggle {
+      background: #4ade80;
+    }
+
+    .toggle-row input:checked + .toggle::after {
+      transform: translateX(18px);
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      opacity: 0.6;
+      margin: 0.2rem 0;
+    }
+
+    .setting input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.15);
+      outline: none;
+    }
+
+    .setting input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .setting input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      border: none;
+    }
+
+    .block-list {
+      margin-top: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
 
     .block-row {
-      cursor: grab;
       display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr auto;
-      gap: 0.4rem;
-      margin-bottom: 0.4rem;
+      grid-template-columns: auto 1.8fr 0.8fr 0.8fr auto;
+      gap: 0.6rem;
+      padding: 0.6rem 0.6rem;
+      border-radius: 10px;
+      align-items: center;
+      background: rgba(255,255,255,0.04);
+      cursor: default;
+      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .block-row input { padding: 0.3rem; }
+    .block-row:hover {
+      background: rgba(255,255,255,0.07);
+    }
+
+    .block-row input {
+      padding: 0.4rem 0.45rem;
+      border-radius: 6px;
+      border: none;
+      background: rgba(0,0,0,0.35);
+      color: inherit;
+      font-size: 0.85rem;
+    }
+
+    .block-row input[type="number"] {
+      width: 3.2rem;
+      text-align: center;
+    }
+
     .block-row button { cursor: pointer; }
 
-    .modal-actions {
-      margin-top: 0.8rem;
-      text-align: right;
+    .block-row button.up,
+    .block-row button.down {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.55);
+      transition: color 0.15s ease, background 0.15s ease;
+      touch-action: manipulation;
     }
+
+    .block-row button.up:hover,
+    .block-row button.down:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .block-row button.up svg,
+    .block-row button.down svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+    }
+
+    
+
+    .block-row button:last-child {
+      opacity: 0.6;
+      background: none;
+      border: none;
+      font-size: 0.9rem;
+      color: inherit;
+      transition: opacity 0.15s ease;
+    }
+
+    .block-row:hover button:last-child {
+      opacity: 0.6;
+    }
+
+    .block-row:hover button:last-child:hover {
+      opacity: 1;
+    }
+
+    .block-row button:last-child:hover { opacity: 1; }
+
+    button.add {
+      margin-top: 0.6rem;
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: inherit;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      opacity: 0.85;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    button.add:hover { opacity: 1; }
 
     ::selection { background: transparent; }
     ::-moz-selection { background: transparent; }
@@ -159,25 +359,30 @@
 
   <div class="modal" id="editor">
     <div class="modal-content">
-      <h3>Sequence & Settings</h3>
+      <button class="close-x" id="closeEditorX" aria-label="Close">✕</button>
 
-      <div class="setting">
-        <label><input type="checkbox" id="enablePause" /> Enable pause</label>
-      </div>
+      <div class="section">
+        <h3>Behavior</h3>
+        <div class="setting">
+          <label class="toggle-row">
+            <span>Enable pause</span>
+            <input type="checkbox" id="enablePause" />
+            <span class="toggle"></span>
+          </label>
+          <div class="hint">Prevents manual mode switching while the timer is running</div>
+        </div>
 
-      <div class="setting">
-        <label>Size
+        <div class="setting">
+          <label>Display size</label>
+          <div class="range-labels"><span>Small</span><span>Large</span></div>
           <input type="range" id="sizeSlider" min="0" max="100" />
-        </label>
+        </div>
       </div>
 
-      <hr />
-
-      <div id="blockList"></div>
-      <button id="addBlock">Add Block</button>
-
-      <div class="modal-actions">
-        <button id="closeEditor">Apply & Close</button>
+      <div class="section">
+        <h3>Sequence</h3>
+        <div id="blockList" class="block-list"></div>
+        <button id="addBlock" class="add">＋ Add block</button>
       </div>
     </div>
   </div>
@@ -187,214 +392,309 @@
   </audio>
 
   <script>
-    const STORAGE_KEY = "sequenced_timer_state_v1";
+    document.addEventListener("DOMContentLoaded", () => {
+      const STORAGE_KEY = "sequenced_timer_state_v1";
 
-    let blocks = [
-      { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
-      { label: "Focus", duration: 35 * 60, color: "#000000" },
-      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-      { label: "Focus", duration: 35 * 60, color: "#000000" },
-      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-      { label: "Focus", duration: 35 * 60, color: "#000000" },
-      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-      { label: "Focus", duration: 35 * 60, color: "#000000" },
-      { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-      { label: "Focus", duration: 35 * 60, color: "#000000" }
-    ];
+      let blocks = [
+        { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
+        { label: "Focus", duration: 35 * 60, color: "#000000" },
+        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+        { label: "Focus", duration: 35 * 60, color: "#000000" },
+        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+        { label: "Focus", duration: 35 * 60, color: "#000000" },
+        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+        { label: "Focus", duration: 35 * 60, color: "#000000" },
+        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
+        { label: "Focus", duration: 35 * 60, color: "#000000" }
+      ];
 
-    let enablePause = false;
-    let sizeLevel = 100;
+      let enablePause = false;
+      let sizeLevel = 100;
+      let userScale = 1;
 
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ blocks, enablePause, sizeLevel }));
-    }
-
-    function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      try {
-        const s = JSON.parse(raw);
-        if (Array.isArray(s.blocks)) blocks = s.blocks;
-        if (typeof s.enablePause === "boolean") enablePause = s.enablePause;
-        if (typeof s.sizeLevel === "number") sizeLevel = s.sizeLevel;
-      } catch {}
-    }
-
-    loadState();
-
-    let currentIndex = 0;
-    let remainingSeconds = blocks[0].duration;
-    let intervalId = null;
-    let running = false;
-
-    const timeEl = document.getElementById("time");
-    const timeWrap = document.getElementById("timeWrap");
-    const editBtn = document.getElementById("edit");
-    const fullscreenBtn = document.getElementById("fullscreen");
-    const sequenceEl = document.getElementById("sequence");
-    const editor = document.getElementById("editor");
-    const blockList = document.getElementById("blockList");
-    const addBlockBtn = document.getElementById("addBlock");
-    const closeEditorBtn = document.getElementById("closeEditor");
-    const enablePauseCheckbox = document.getElementById("enablePause");
-    const sizeSlider = document.getElementById("sizeSlider");
-    const bellSound = document.getElementById("bellSound");
-
-    function playBell() {
-      bellSound.currentTime = 0;
-      bellSound.play().catch(() => {});
-    }
-
-    function applySize() {
-      const pad = (1 - sizeLevel / 100) * 3;
-      document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
-      document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
-
-      const container = document.querySelector(".timer");
-      const baseWidth = timeEl.scrollWidth;
-      const baseHeight = timeEl.scrollHeight;
-      const scale = Math.min(container.clientWidth / baseWidth, (container.clientHeight * 0.75) / baseHeight);
-      timeEl.style.transform = `scale(${scale})`;
-      timeWrap.style.height = `${baseHeight * scale}px`;
-    }
-
-    function formatTime(sec) {
-      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
-    }
-
-    function renderSequence() {
-      editBtn.style.display = running ? "none" : "block";
-      sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
-      [...sequenceEl.children].forEach((btn, i) => btn.onclick = () => { running = false; clearInterval(intervalId); currentIndex = i; loadBlock(i); });
-    }
-
-    function loadBlock(i) {
-      const b = blocks[i];
-      if (!b) return;
-      document.body.style.backgroundColor = b.color;
-      remainingSeconds = b.duration;
-      timeEl.textContent = formatTime(remainingSeconds);
-      applySize();
-      renderSequence();
-    }
-
-    function advanceBlock() {
-      playBell();
-      if (currentIndex < blocks.length - 1) loadBlock(++currentIndex);
-      else { clearInterval(intervalId); running = false; renderSequence(); }
-    }
-
-    function tick() {
-      remainingSeconds > 0 ? (remainingSeconds--, timeEl.textContent = formatTime(remainingSeconds), applySize()) : advanceBlock();
-    }
-
-    timeEl.onclick = () => {
-      running ? (enablePause || (clearInterval(intervalId), running = false)) : (tick(), intervalId = setInterval(tick, 1000), running = true);
-      renderSequence();
-    };
-
-    fullscreenBtn.onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
-    document.addEventListener("fullscreenchange", () => fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block");
-
-    editBtn.onclick = () => { enablePauseCheckbox.checked = enablePause; sizeSlider.value = sizeLevel; renderEditor(); editor.style.display = "flex"; };
-
-    closeEditorBtn.onclick = () => {
-      enablePause = enablePauseCheckbox.checked;
-      blocks = readEditor();
-      saveState();
-      editor.style.display = "none";
-      running = false;
-      clearInterval(intervalId);
-      loadBlock(0);
-    };
-
-    sizeSlider.oninput = e => { sizeLevel = +e.target.value; applySize(); saveState(); };
-    addBlockBtn.onclick = () => {
-      const lastRow = blockList.lastElementChild;
-      if (lastRow) {
-        const [l, m, c] = lastRow.querySelectorAll("input");
-        blockList.appendChild(blockRow({
-          label: l.value || "New Block",
-          duration: Number(m.value) * 60,
-          color: c.value
-        }));
-      } else {
-        blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ blocks, enablePause, sizeLevel }));
       }
-    };
 
-    function renderEditor() { blockList.innerHTML = ""; blocks.forEach(b => blockList.appendChild(blockRow(b))); }
+      function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+          const s = JSON.parse(raw);
+          if (Array.isArray(s.blocks)) blocks = s.blocks;
+          if (typeof s.enablePause === "boolean") enablePause = s.enablePause;
+          if (typeof s.sizeLevel === "number") sizeLevel = s.sizeLevel;
+        } catch {}
+      }
 
-    function blockRow(b) {
-      const r = document.createElement("div");
-      r.className = "block-row";
-      r.draggable = true;
-      r.innerHTML = `<input value="${b.label}"><input type="number" value="${b.duration / 60}"><input type="color" value="${b.color}"><button>✕</button>`;
+      loadState();
 
-      const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
+      let currentIndex = 0;
+      let remainingSeconds = blocks[0].duration;
+      let intervalId = null;
+      let running = false;
+      let draggedRow = null;
 
-      function findPreviousSameLabelRow() {
-        const rows = [...blockList.children];
-        const idx = rows.indexOf(r);
-        const label = labelInput.value.trim() || "Untitled";
-        for (let i = idx - 1; i >= 0; i--) {
-          const [l] = rows[i].querySelectorAll("input");
-          if ((l.value.trim() || "Untitled") === label) return rows[i];
+      const timeEl = document.getElementById("time");
+      const timeWrap = document.getElementById("timeWrap");
+      const editBtn = document.getElementById("edit");
+      const fullscreenBtn = document.getElementById("fullscreen");
+      const sequenceEl = document.getElementById("sequence");
+      const editor = document.getElementById("editor");
+      const blockList = document.getElementById("blockList");
+      const addBlockBtn = document.getElementById("addBlock");
+      const closeEditorBtn = document.getElementById("closeEditorX");
+      const enablePauseCheckbox = document.getElementById("enablePause");
+      const sizeSlider = document.getElementById("sizeSlider");
+      const bellSound = document.getElementById("bellSound");
+
+      function playBell() {
+        bellSound.currentTime = 0;
+        bellSound.play().catch(() => {});
+      }
+
+      function applySize() {
+        const pad = (1 - sizeLevel / 100) * 3;
+        document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
+        document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
+
+        const container = document.querySelector(".timer");
+
+        // Measure unscaled base size safely
+        timeEl.style.transform = "scale(1)";
+        const baseWidth = timeEl.scrollWidth;
+        const baseHeight = timeEl.scrollHeight;
+
+        const fitScale = Math.min(
+          container.clientWidth / baseWidth,
+          (container.clientHeight * 0.75) / baseHeight
+        );
+
+        const finalScale = fitScale * userScale;
+        timeEl.style.transform = `scale(${finalScale})`;
+        timeWrap.style.height = `${baseHeight * finalScale}px`;
+      }
+
+      function formatTime(sec) {
+        return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+      }
+
+      function renderSequence() {
+        editBtn.style.display = running ? "none" : "block";
+        sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
+
+        [...sequenceEl.children].forEach((btn, i) => {
+          btn.onclick = () => {
+            if (enablePause) return;
+            running = false;
+            clearInterval(intervalId);
+            currentIndex = i;
+            loadBlock(i);
+          };
+        });
+      }
+
+      function loadBlock(i) {
+        const b = blocks[i];
+        if (!b) return;
+        document.body.style.backgroundColor = b.color;
+        remainingSeconds = b.duration;
+        timeEl.textContent = formatTime(remainingSeconds);
+        applySize();
+        renderSequence();
+      }
+
+      function advanceBlock() {
+        playBell();
+        if (currentIndex < blocks.length - 1) {
+          loadBlock(++currentIndex);
+        } else {
+          clearInterval(intervalId);
+          running = false;
+          renderSequence();
         }
-        return null;
       }
 
-      labelInput.addEventListener("input", () => {
-        const prev = findPreviousSameLabelRow();
-        if (!prev) return;
-        const [, pm, pc] = prev.querySelectorAll("input");
-        minutesInput.value = pm.value;
-        colorInput.value = pc.value;
+      function tick() {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          timeEl.textContent = formatTime(remainingSeconds);
+          applySize();
+        } else {
+          advanceBlock();
+        }
+      }
+
+      timeEl.onclick = () => {
+        if (running) {
+          if (enablePause) return;
+          clearInterval(intervalId);
+          running = false;
+        } else {
+          tick();
+          intervalId = setInterval(tick, 1000);
+          running = true;
+        }
+        renderSequence();
+      };
+
+      fullscreenBtn.onclick = () => {
+        try {
+          if (!document.fullscreenEnabled) return;
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        } catch {}
+      };
+
+      document.addEventListener("fullscreenchange", () => {
+        fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
       });
 
-            r.addEventListener("dragstart", e => {
-        draggedRow = r;
-        r.style.opacity = "0.5";
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", "");
-      });
+      editBtn.onclick = () => {
+        enablePauseCheckbox.checked = enablePause;
+        sizeSlider.value = sizeLevel;
+        renderEditor();
+        editor.style.display = "flex";
+      };
 
-      r.addEventListener("dragend", () => {
-        r.style.opacity = "";
-        draggedRow = null;
-      });
+      closeEditorBtn.onclick = () => {
+        enablePause = enablePauseCheckbox.checked;
+        blocks = readEditor();
+        saveState();
+        editor.style.display = "none";
+        running = false;
+        clearInterval(intervalId);
+        loadBlock(0);
+      };
 
-      r.addEventListener("dragover", e => e.preventDefault());
+      sizeSlider.oninput = e => {
+        sizeLevel = +e.target.value;
+        // Map slider to a perceptual scale range (0.25x – 1.0x)
+        userScale = 0.25 + (sizeLevel / 100) * 0.75;
+        applySize();
+        saveState();
+      };
 
-      r.addEventListener("drop", e => {
-        e.preventDefault();
-        if (!draggedRow || draggedRow === r) return;
+      addBlockBtn.onclick = () => {
+        const lastRow = blockList.lastElementChild;
+        if (lastRow) {
+          const [l, m, c] = lastRow.querySelectorAll("input");
+          blockList.appendChild(blockRow({
+            label: l.value || "New Block",
+            duration: Number(m.value) * 60,
+            color: c.value
+          }));
+        } else {
+          blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
+        }
+      };
+
+      function renderEditor() {
+        blockList.innerHTML = "";
+        blocks.forEach(b => blockList.appendChild(blockRow(b)));
+      }
+
+      function blockRow(b) {
+        const r = document.createElement("div");
+        r.className = "block-row";
+        r.draggable = true;
+        r.innerHTML = `
+          <div class="move-controls">
+            <button class="up" aria-label="Move up">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 6l7 8H5z" />
+              </svg>
+            </button>
+            <button class="down" aria-label="Move down">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 18l7-8H5z" />
+              </svg>
+            </button>
+          </div>
+          <input value="${b.label}">
+          <input type="number" value="${b.duration / 60}" min="0" step="1">
+          <input type="color" value="${b.color}">
+          <button>✕</button>`;
+
+        const [upBtn, downBtn] = r.querySelectorAll(".up, .down");
+        const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
+
+        upBtn.onclick = () => {
+          const prev = r.previousElementSibling;
+          if (prev) blockList.insertBefore(r, prev);
+        };
+
+        downBtn.onclick = () => {
+          const next = r.nextElementSibling;
+          if (next) blockList.insertBefore(next, r);
+        };
+
+        function findPreviousSameLabelRow() {
+          const rows = [...blockList.children];
+          const idx = rows.indexOf(r);
+          const label = labelInput.value.trim() || "Untitled";
+          for (let i = idx - 1; i >= 0; i--) {
+            const [l] = rows[i].querySelectorAll("input");
+            if ((l.value.trim() || "Untitled") === label) return rows[i];
+          }
+          return null;
+        }
+
+        labelInput.addEventListener("input", () => {
+          const prev = findPreviousSameLabelRow();
+          if (!prev) return;
+          const [, pm, pc] = prev.querySelectorAll("input");
+          minutesInput.value = pm.value;
+          colorInput.value = pc.value;
+        });
+
+        r.addEventListener("dragstart", e => {
+          draggedRow = r;
+          r.style.opacity = "0.5";
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", "");
+        });
+
+        r.addEventListener("dragend", () => {
+          r.style.opacity = "";
+          draggedRow = null;
+        });
+
+        r.addEventListener("dragover", e => e.preventDefault());
+
+        r.addEventListener("drop", e => {
+          e.preventDefault();
+          if (!draggedRow || draggedRow === r) return;
+          const rows = [...blockList.children];
+          const from = rows.indexOf(draggedRow);
+          const to = rows.indexOf(r);
+          blockList.insertBefore(draggedRow, from < to ? r.nextSibling : r);
+        });
+
+        r.querySelector("button:last-child").onclick = () => r.remove();
+        return r;
+      }
+
+      function readEditor() {
         const rows = [...blockList.children];
-        const from = rows.indexOf(draggedRow);
-        const to = rows.indexOf(r);
-        blockList.insertBefore(draggedRow, from < to ? r.nextSibling : r);
-      });
+        const canon = {};
+        rows.forEach(r => {
+          const [l, m, c] = r.querySelectorAll("input");
+          const label = l.value.trim() || "Untitled";
+          if (!canon[label]) canon[label] = { duration: +m.value * 60, color: c.value };
+        });
+        return rows.map(r => {
+          const l = r.querySelector("input").value.trim() || "Untitled";
+          return { label: l, ...canon[l] };
+        });
+      }
 
-      r.querySelector("button").onclick = () => r.remove();
-      return r;
-    }
-
-    function readEditor() {
-      const rows = [...blockList.children];
-      const canon = {};
-      rows.forEach(r => {
-        const [l, m, c] = r.querySelectorAll("input");
-        const label = l.value.trim() || "Untitled";
-        if (!canon[label]) canon[label] = { duration: +m.value * 60, color: c.value };
-      });
-      return rows.map(r => {
-        const l = r.querySelector("input").value.trim() || "Untitled";
-        return { label: l, ...canon[l] };
-      });
-    }
-
-    applySize();
-    loadBlock(0);
+      applySize();
+      loadBlock(0);
+    });
   </script>
 </body>
 </html>
