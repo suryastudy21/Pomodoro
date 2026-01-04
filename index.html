@@ -111,25 +111,51 @@
       width: 540px;
       max-height: 80vh;
       overflow-y: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
 
-    .close-x {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      color: inherit;
-      font-size: 1.6rem;
-      cursor: pointer;
-      opacity: 0.6;
-      padding: 0.4rem;
-      border-radius: 50%;
-      z-index: 3;
+    .modal-content::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      background: transparent;
     }
 
-    .close-x:hover { opacity: 1; }
+    .close-x {
+      position: sticky;
+      top: 0.8rem;
+      margin-left: auto;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 2.75rem;
+      height: 2.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border-radius: 10px;
+      z-index: 3;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .close-x:hover {
+      background: rgba(255,255,255,0.28);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    }
+
+    .close-x:active {
+      transform: scale(0.95);
+    }
+
+    .close-x:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 0 4px rgba(0,0,0,0.6);
+    }
 
     .section {
       margin-bottom: 1.6rem;
@@ -169,9 +195,7 @@
       cursor: pointer;
     }
 
-    .toggle-row input {
-      display: none;
-    }
+    .toggle-row input { display: none; }
 
     .toggle {
       width: 42px;
@@ -194,13 +218,8 @@
       transition: transform 0.2s ease;
     }
 
-    .toggle-row input:checked + .toggle {
-      background: #4ade80;
-    }
-
-    .toggle-row input:checked + .toggle::after {
-      transform: translateX(18px);
-    }
+    .toggle-row input:checked + .toggle { background: #4ade80; }
+    .toggle-row input:checked + .toggle::after { transform: translateX(18px); }
 
     .range-labels {
       display: flex;
@@ -229,15 +248,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
-    .setting input[type="range"]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #fff;
-      cursor: pointer;
-      border: none;
-    }
-
     .block-list {
       margin-top: 0.6rem;
       display: flex;
@@ -254,12 +264,9 @@
       align-items: center;
       background: rgba(255,255,255,0.04);
       cursor: default;
-      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .block-row:hover {
-      background: rgba(255,255,255,0.07);
-    }
+    .block-row:hover { background: rgba(255,255,255,0.07); }
 
     .block-row input {
       padding: 0.4rem 0.45rem;
@@ -270,10 +277,7 @@
       font-size: 0.85rem;
     }
 
-    .block-row input[type="number"] {
-      width: 3.2rem;
-      text-align: center;
-    }
+    .block-row input[type="number"] { width: 3.2rem; text-align: center; }
 
     .block-row button { cursor: pointer; }
 
@@ -288,45 +292,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       color: rgba(255,255,255,0.55);
-      transition: color 0.15s ease, background 0.15s ease;
-      touch-action: manipulation;
     }
 
     .block-row button.up:hover,
-    .block-row button.down:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.12);
-    }
+    .block-row button.down:hover { color: #fff; background: rgba(255,255,255,0.12); }
 
-    .block-row button.up svg,
-    .block-row button.down svg {
-      width: 12px;
-      height: 12px;
-      fill: currentColor;
-    }
-
-    
-
-    .block-row button:last-child {
-      opacity: 0.6;
-      background: none;
-      border: none;
-      font-size: 0.9rem;
-      color: inherit;
-      transition: opacity 0.15s ease;
-    }
-
-    .block-row:hover button:last-child {
-      opacity: 0.6;
-    }
-
-    .block-row:hover button:last-child:hover {
-      opacity: 1;
-    }
-
-    .block-row button:last-child:hover { opacity: 1; }
+    .block-row button:last-child { opacity: 1; background: none; border: none; color: #ffffff; font-weight: 600; }
+    .block-row button:last-child:hover { opacity: 1; background: rgba(255,255,255,0.12); }
 
     button.add {
       margin-top: 0.6rem;
@@ -336,13 +309,9 @@
       padding: 0.5rem 0.7rem;
       border-radius: 8px;
       opacity: 0.85;
-      transition: background 0.15s ease, opacity 0.15s ease;
     }
 
     button.add:hover { opacity: 1; }
-
-    ::selection { background: transparent; }
-    ::-moz-selection { background: transparent; }
   </style>
 </head>
 <body>
@@ -398,14 +367,7 @@
       let blocks = [
         { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
         { label: "Focus", duration: 35 * 60, color: "#000000" },
-        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-        { label: "Focus", duration: 35 * 60, color: "#000000" },
-        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-        { label: "Focus", duration: 35 * 60, color: "#000000" },
-        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-        { label: "Focus", duration: 35 * 60, color: "#000000" },
-        { label: "Break", duration: 6 * 60, color: "#fbbf24" },
-        { label: "Focus", duration: 35 * 60, color: "#000000" }
+        { label: "Break", duration: 6 * 60, color: "#fbbf24" }
       ];
 
       let enablePause = false;
@@ -433,7 +395,6 @@
       let remainingSeconds = blocks[0].duration;
       let intervalId = null;
       let running = false;
-      let draggedRow = null;
 
       const timeEl = document.getElementById("time");
       const timeWrap = document.getElementById("timeWrap");
@@ -448,22 +409,15 @@
       const sizeSlider = document.getElementById("sizeSlider");
       const bellSound = document.getElementById("bellSound");
 
-      function playBell() {
-        bellSound.currentTime = 0;
-        bellSound.play().catch(() => {});
-      }
-
       function applySize() {
         const pad = (1 - sizeLevel / 100) * 3;
         document.documentElement.style.setProperty("--pad-scale", `${pad}rem`);
         document.documentElement.style.setProperty("--gear-offset", `${pad}rem`);
 
         const container = document.querySelector(".timer");
-
-        // Measure unscaled base size safely
         timeEl.style.transform = "scale(1)";
-        const baseWidth = timeEl.scrollWidth;
-        const baseHeight = timeEl.scrollHeight;
+        const baseWidth = timeEl.scrollWidth || 1;
+        const baseHeight = timeEl.scrollHeight || 1;
 
         const fitScale = Math.min(
           container.clientWidth / baseWidth,
@@ -482,7 +436,6 @@
       function renderSequence() {
         editBtn.style.display = running ? "none" : "block";
         sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
-
         [...sequenceEl.children].forEach((btn, i) => {
           btn.onclick = () => {
             if (enablePause) return;
@@ -504,54 +457,25 @@
         renderSequence();
       }
 
-      function advanceBlock() {
-        playBell();
-        if (currentIndex < blocks.length - 1) {
-          loadBlock(++currentIndex);
-        } else {
-          clearInterval(intervalId);
-          running = false;
-          renderSequence();
-        }
-      }
-
-      function tick() {
-        if (remainingSeconds > 0) {
-          remainingSeconds--;
-          timeEl.textContent = formatTime(remainingSeconds);
-          applySize();
-        } else {
-          advanceBlock();
-        }
-      }
-
       timeEl.onclick = () => {
         if (running) {
           if (enablePause) return;
           clearInterval(intervalId);
           running = false;
         } else {
-          tick();
-          intervalId = setInterval(tick, 1000);
+          // immediate feedback: tick once instantly
+          remainingSeconds = Math.max(remainingSeconds - 1, 0);
+          timeEl.textContent = formatTime(remainingSeconds);
+
+          intervalId = setInterval(() => {
+            remainingSeconds--;
+            if (remainingSeconds < 0) remainingSeconds = 0;
+            timeEl.textContent = formatTime(remainingSeconds);
+          }, 1000);
           running = true;
         }
         renderSequence();
       };
-
-      fullscreenBtn.onclick = () => {
-        try {
-          if (!document.fullscreenEnabled) return;
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-          } else {
-            document.documentElement.requestFullscreen().catch(() => {});
-          }
-        } catch {}
-      };
-
-      document.addEventListener("fullscreenchange", () => {
-        fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
-      });
 
       editBtn.onclick = () => {
         enablePauseCheckbox.checked = enablePause;
@@ -572,24 +496,13 @@
 
       sizeSlider.oninput = e => {
         sizeLevel = +e.target.value;
-        // Map slider to a perceptual scale range (0.25x – 1.0x)
         userScale = 0.25 + (sizeLevel / 100) * 0.75;
         applySize();
         saveState();
       };
 
       addBlockBtn.onclick = () => {
-        const lastRow = blockList.lastElementChild;
-        if (lastRow) {
-          const [l, m, c] = lastRow.querySelectorAll("input");
-          blockList.appendChild(blockRow({
-            label: l.value || "New Block",
-            duration: Number(m.value) * 60,
-            color: c.value
-          }));
-        } else {
-          blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
-        }
+        blockList.appendChild(blockRow({ label: "New Block", duration: 300, color: "#444" }));
       };
 
       function renderEditor() {
@@ -600,97 +513,50 @@
       function blockRow(b) {
         const r = document.createElement("div");
         r.className = "block-row";
-        r.draggable = true;
         r.innerHTML = `
           <div class="move-controls">
-            <button class="up" aria-label="Move up">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 6l7 8H5z" />
-              </svg>
-            </button>
-            <button class="down" aria-label="Move down">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 18l7-8H5z" />
-              </svg>
-            </button>
+            <button class="up" aria-label="Move up">▲</button>
+            <button class="down" aria-label="Move down">▼</button>
           </div>
           <input value="${b.label}">
           <input type="number" value="${b.duration / 60}" min="0" step="1">
           <input type="color" value="${b.color}">
-          <button>✕</button>`;
+          <button class="delete" aria-label="Delete block">✕</button>`;
 
-        const [upBtn, downBtn] = r.querySelectorAll(".up, .down");
-        const [labelInput, minutesInput, colorInput] = r.querySelectorAll("input");
+        const upBtn = r.querySelector(".up");
+        const downBtn = r.querySelector(".down");
+        const delBtn = r.querySelector(".delete");
 
-        upBtn.onclick = () => {
+        upBtn.onclick = e => {
+          e.preventDefault();
           const prev = r.previousElementSibling;
           if (prev) blockList.insertBefore(r, prev);
         };
 
-        downBtn.onclick = () => {
+        downBtn.onclick = e => {
+          e.preventDefault();
           const next = r.nextElementSibling;
           if (next) blockList.insertBefore(next, r);
         };
 
-        function findPreviousSameLabelRow() {
-          const rows = [...blockList.children];
-          const idx = rows.indexOf(r);
-          const label = labelInput.value.trim() || "Untitled";
-          for (let i = idx - 1; i >= 0; i--) {
-            const [l] = rows[i].querySelectorAll("input");
-            if ((l.value.trim() || "Untitled") === label) return rows[i];
-          }
-          return null;
-        }
-
-        labelInput.addEventListener("input", () => {
-          const prev = findPreviousSameLabelRow();
-          if (!prev) return;
-          const [, pm, pc] = prev.querySelectorAll("input");
-          minutesInput.value = pm.value;
-          colorInput.value = pc.value;
-        });
-
-        r.addEventListener("dragstart", e => {
-          draggedRow = r;
-          r.style.opacity = "0.5";
-          e.dataTransfer.effectAllowed = "move";
-          e.dataTransfer.setData("text/plain", "");
-        });
-
-        r.addEventListener("dragend", () => {
-          r.style.opacity = "";
-          draggedRow = null;
-        });
-
-        r.addEventListener("dragover", e => e.preventDefault());
-
-        r.addEventListener("drop", e => {
+        delBtn.onclick = e => {
           e.preventDefault();
-          if (!draggedRow || draggedRow === r) return;
-          const rows = [...blockList.children];
-          const from = rows.indexOf(draggedRow);
-          const to = rows.indexOf(r);
-          blockList.insertBefore(draggedRow, from < to ? r.nextSibling : r);
-        });
+          r.remove();
+        };
 
-        r.querySelector("button:last-child").onclick = () => r.remove();
         return r;
       }
 
       function readEditor() {
-        const rows = [...blockList.children];
-        const canon = {};
-        rows.forEach(r => {
+        return [...blockList.children].map(r => {
           const [l, m, c] = r.querySelectorAll("input");
-          const label = l.value.trim() || "Untitled";
-          if (!canon[label]) canon[label] = { duration: +m.value * 60, color: c.value };
-        });
-        return rows.map(r => {
-          const l = r.querySelector("input").value.trim() || "Untitled";
-          return { label: l, ...canon[l] };
+          return { label: l.value.trim() || "Untitled", duration: +m.value * 60, color: c.value };
         });
       }
+
+      // basic sanity checks
+      console.assert(typeof applySize === "function", "applySize exists");
+      console.assert(typeof blockRow === "function", "blockRow exists");
 
       applySize();
       loadBlock(0);
