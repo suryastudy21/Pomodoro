@@ -650,6 +650,16 @@ function measureBase() {
         timeWrap.style.height = `${baseHeight * finalScale}px`;
       }
 
+      
+      function resyncLayout() {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            measureBase();
+            applySize();
+          });
+        });
+      }
+
       function formatTime(sec) {
         return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
       }
@@ -723,8 +733,11 @@ function measureBase() {
         } catch {}
       };
 
+      window.addEventListener("resize", () => { resyncLayout(); });
+
       document.addEventListener("fullscreenchange", () => {
         fullscreenBtn.style.display = document.fullscreenElement ? "none" : "block";
+        resyncLayout();
       });
 
       editBtn.onclick = () => {
