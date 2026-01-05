@@ -632,18 +632,44 @@ button:active,
 
       loadState();
 
-      function loadStats() {
-        const raw = localStorage.getItem(STATS_KEY);
-        if (!raw) return;
-        try {
-          const s = JSON.parse(raw);
-          if (typeof s.totalRunSeconds === "number") totalRunSeconds = s.totalRunSeconds;
-          if (typeof s.totalFocusSeconds === "number") totalFocusSeconds = s.totalFocusSeconds;
-        } catch {}
+
+      function todayKey() {
+        return new Date().toISOString().slice(0, 10);
       }
 
-      function saveStats() {
+      function loadStats() {
+        const raw = localStorage.getItem(STATS_KEY);
+        const today = todayKey();
+
+        if (!raw) {
+          totalRunSeconds = 0;
+          totalFocusSeconds = 0;
+          saveStats(today);
+          return;
+        }
+
+        try {
+          const s = JSON.parse(raw);
+
+          if (s.date !== today) {
+            totalRunSeconds = 0;
+            totalFocusSeconds = 0;
+            saveStats(today);
+            return;
+          }
+
+          if (typeof s.totalRunSeconds === "number") totalRunSeconds = s.totalRunSeconds;
+          if (typeof s.totalFocusSeconds === "number") totalFocusSeconds = s.totalFocusSeconds;
+        } catch {
+          totalRunSeconds = 0;
+          totalFocusSeconds = 0;
+          saveStats(today);
+        }
+      }
+
+      function saveStats(date = todayKey()) {
         localStorage.setItem(STATS_KEY, JSON.stringify({
+          date,
           totalRunSeconds,
           totalFocusSeconds
         }));
