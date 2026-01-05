@@ -467,6 +467,7 @@ button:active,
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 	
@@ -535,6 +536,12 @@ button:active,
         <div id="blockList" class="block-list"></div>
         <button id="addBlock" class="add">＋ Add block</button>
       </div>
+      <div class="section">
+        <h3>Statistics</h3>
+        <div id="statsContent" class="setting">
+          Loading…
+        </div>
+      </div>
     </div>
   </div>
 
@@ -543,7 +550,25 @@ button:active,
   </audio>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    
+document.addEventListener("DOMContentLoaded", () => {
+
+      // ===== Supabase setup (REPLACE WITH YOUR KEYS) =====
+      const supabaseUrl = "https://pdhnteyywdyrwvmkzomh.supabase.co";
+      const supabaseAnonKey = "sb_publishable_20qMfOkduMMYsZFnfQuoOQ_FxFnBZs9";
+      const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+      console.log("Supabase global:", typeof supabase);
+      console.log("Supabase client created:", supabaseClient);
+
+
+      let userId = null;
+      supabaseClient.auth.signInAnonymously().then(({ data }) => {
+        userId = data.user.id;
+      });
+
+      // ===== Session logging state =====
+      let currentSessionStart = null;
+
       const STORAGE_KEY = "sequenced_timer_state_v1";
 
       let blocks = [
@@ -608,6 +633,37 @@ button:active,
       const closeEditorBtn = document.getElementById("closeEditorX");
       const enablePauseCheckbox = document.getElementById("enablePause");
       const sizeSlider = document.getElementById("sizeSlider");
+      const statsContent = document.getElementById("statsContent");
+      function formatDuration(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        if (h > 0) return `${h}h ${m}m`;
+        return `${m}m`;
+      }
+
+      async function loadStats() {
+        if (!userId || !statsContent) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        statsContent.textContent = "Loading…";
+
+        const { data, error } = await supabaseClient
+          .from("sessions")
+          .select("duration")
+          .eq("block", "Focus")
+          .gte("start_time", today.toISOString());
+
+        if (error) {
+          statsContent.textContent = "Failed to load stats";
+          console.error(error);
+          return;
+        }
+
+        const totalSeconds = data.reduce((sum, row) => sum + row.duration, 0);
+        statsContent.textContent = `Focus today: ${formatDuration(totalSeconds)}`;
+      }
       const bellSound = document.getElementById("bellSound");
 
       function playBell() {
@@ -690,6 +746,34 @@ function measureBase() {
       }
 
       function advanceBlock() {
+        if (!currentSessionStart || !userId) {
+          playBell();
+          if (currentIndex < blocks.length - 1) {
+            loadBlock(++currentIndex);
+          } else {
+            clearInterval(intervalId);
+            running = false;
+            renderSequence();
+          }
+          return;
+        }
+        if (currentSessionStart && userId) {
+          const end = new Date();
+          const duration = Math.floor((end - new Date(currentSessionStart)) / 1000);
+
+          supabaseClient.from("sessions").insert({
+            user_id: userId,
+            block: blocks[currentIndex].label,
+            start_time: currentSessionStart,
+            end_time: end.toISOString(),
+            duration: duration
+          }).then(({ warns, error }) => {
+            if (error) console.error(error);
+          });
+
+          currentSessionStart = null;
+        }
+
         playBell();
         if (currentIndex < blocks.length - 1) {
           loadBlock(++currentIndex);
@@ -714,7 +798,26 @@ function measureBase() {
           if (enablePause) return;
           clearInterval(intervalId);
           running = false;
+          // End session logging on manual stop
+          if (currentSessionStart && userId) {
+            const end = new Date();
+            const duration = Math.floor((end - new Date(currentSessionStart)) / 1000);
+
+            supabaseClient.from("sessions").insert({
+              user_id: userId,
+              block: blocks[currentIndex].label,
+              start_time: currentSessionStart,
+              end_time: end.toISOString(),
+              duration: duration
+            }).then(({ error }) => {
+              if (error) console.error(error);
+            });
+
+            currentSessionStart = null;
+          }
         } else {
+          // Start session logging only when the timer actually starts
+          currentSessionStart = new Date().toISOString();
           tick();
           intervalId = setInterval(tick, 1000);
           running = true;
@@ -745,6 +848,7 @@ function measureBase() {
         sizeSlider.value = sizeLevel;
         renderEditor();
         editor.style.display = "flex";
+        loadStats();
       };
 
       closeEditorBtn.onclick = () => {
