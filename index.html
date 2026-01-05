@@ -466,6 +466,27 @@ button:active,
   }
 }
 
+
+.top-stats {
+  position: absolute;
+  top: calc(var(--gear-offset) + 1.2rem);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  display: none;
+  justify-content: center;
+  gap: 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0.8;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.top-stats .sep {
+  opacity: 0.5;
+}
+
 </style>
 </head>
 <body>
@@ -497,6 +518,12 @@ button:active,
     fill="currentColor"
   />
 </svg></button>
+
+    <div class="top-stats" id="topStats">
+      <span id="topStatFocus">Focus: 0h 0m</span>
+      <span class="sep">•</span>
+      <span id="topStatTotal">Total: 0h 0m</span>
+    </div>
 
     <div class="time-wrap" id="timeWrap">
       <button class="time" id="time" type="button"></button>
@@ -648,6 +675,10 @@ button:active,
       const statFocusEl = document.getElementById("statFocus");
       const statTotalEl = document.getElementById("statTotal");
 
+      const topStats = document.getElementById("topStats");
+      const topStatFocusEl = document.getElementById("topStatFocus");
+      const topStatTotalEl = document.getElementById("topStatTotal");
+
       function playBell() {
         bellSound.currentTime = 0;
         bellSound.play().catch(() => {});
@@ -702,6 +733,13 @@ function measureBase() {
         return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
       }
 
+
+      function updateTopStats() {
+        topStatFocusEl.textContent = `Focus: ${formatHours(totalFocusSeconds)}`;
+        topStatTotalEl.textContent = `Total: ${formatHours(totalRunSeconds)}`;
+        topStats.style.display = running ? "none" : "flex";
+      }
+
       function formatHours(sec) {
         const h = Math.floor(sec / 3600);
         const m = Math.floor((sec % 3600) / 60);
@@ -731,6 +769,7 @@ function measureBase() {
         timeEl.textContent = formatTime(remainingSeconds);
         applySize();
         renderSequence();
+        updateTopStats();
       }
 
       function advanceBlock() {
@@ -747,6 +786,7 @@ function measureBase() {
         }
 
         saveStats();
+        updateTopStats();
         playBell();
 
         if (currentIndex < blocks.length - 1) {
@@ -807,6 +847,7 @@ function measureBase() {
           intervalId = setInterval(tick, 1000);
           running = true;
         }
+        updateTopStats();
         renderSequence();
       };
 
@@ -845,6 +886,7 @@ function measureBase() {
         running = false;
         clearInterval(intervalId);
         loadBlock(0);
+      updateTopStats();
       };
 
       sizeSlider.oninput = e => {
@@ -1004,6 +1046,7 @@ function measureBase() {
       measureBase();
       applySize();
       loadBlock(0);
+      updateTopStats();
     });
   </script>
 </body>
