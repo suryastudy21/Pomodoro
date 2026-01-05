@@ -8,6 +8,7 @@
   <meta charset="UTF-8" />
   <title>Pomodoro</title>
   <style>
+    
     :root {
       --bg: #111;
       --fg: #ffffff;
@@ -68,15 +69,45 @@
     }
 
     .gear {
-      position: absolute;
-      top: var(--gear-offset);
-      right: var(--gear-offset);
+      position: relative;
       background: none;
       border: none;
       color: inherit;
       font-size: 3.6rem;
       cursor: pointer;
       opacity: 0.7;
+    }
+
+    .corner-controls .gear {
+      margin: 0.6rem;
+      margin-right: 1rem;
+      margin-left: -0.5rem;
+    }
+
+    .corner-controls {
+      position: absolute;
+      top: var(--gear-offset);
+      right: var(--gear-offset);
+      display: grid;
+      grid-template-columns: auto auto;
+      grid-template-areas:
+        "fullscreen settings"
+        "stats stats";
+      gap: 0.6rem;
+      z-index: 50;
+    }
+
+    #edit {
+      grid-area: settings;
+    }
+
+    #fullscreen {
+      grid-area: fullscreen;
+    }
+
+    #stats {
+      grid-area: stats;
+      justify-self: end;
     }
 
     .gear:hover { opacity: 1; }
@@ -360,6 +391,24 @@
       justify-content: center;
     }
 
+        /* Make the corner icons have a reliable hit box and be above the timer text */
+    .gear.icon-btn {
+    z-index: 50;
+    width: 48px;
+    height: 48px;
+    padding: 0;              /* remove browser default button padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;          /* avoids baseline quirks */
+    }
+
+    /* Make the SVG not affect hit-testing/offsets */
+    .gear.icon-btn svg {
+    display: block;
+    pointer-events: none;
+    }
+
     .icon-btn svg {
       width: 1em;
       height: 1em;
@@ -470,8 +519,8 @@ button:active,
 .top-stats {
   position: absolute;
   top: calc(var(--gear-offset) + 1.2rem);
-  left: 0;
-  right: 0;
+  left: 0rem;
+  right: 0rem;
   margin: 0 auto;
   display: none;
   justify-content: center;
@@ -479,7 +528,9 @@ button:active,
   font-size: 1.1rem;
   font-weight: 500;
   opacity: 0.8;
-  white-space: nowrap;
+  white-space: normal;
+  flex-wrap: wrap;
+  text-align: center;
   pointer-events: none;
 }
 
@@ -492,7 +543,8 @@ button:active,
 <body>
 	
   <div class="timer">
-    <button class="gear icon-btn" id="edit" title="Settings"><?xml version="1.0" encoding="iso-8859-1"?>
+    <div class="corner-controls">
+      <button class="gear icon-btn" id="edit" title="Settings"><?xml version="1.0" encoding="iso-8859-1"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg fill="currentColor" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
 	 viewBox="0 0 472.615 472.615" xml:space="preserve">
@@ -509,7 +561,7 @@ button:active,
 	</g>
 </g>
 </svg></button>
-    <button class="gear icon-btn" id="fullscreen" title="Toggle Fullscreen" style="right: calc(var(--gear-offset) + 3.8rem);"><?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+      <button class="gear icon-btn" id="fullscreen" title="Toggle Fullscreen"><?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="800px" height="800px" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     fill-rule="evenodd"
@@ -518,11 +570,21 @@ button:active,
     fill="currentColor"
   />
 </svg></button>
+      <button class="gear icon-btn" id="stats" title="Stats">
+        <svg viewBox="0 0 24 24" width="800px" height="800px" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4"  y="10" width="3" height="10" fill="currentColor"></rect>
+          <rect x="10" y="6"  width="3" height="14" fill="currentColor"></rect>
+          <rect x="16" y="13" width="3" height="7"  fill="currentColor"></rect>
+        </svg>
+      </button>
+    </div>
 
     <div class="top-stats" id="topStats">
       <span id="topStatFocus">Focus: 0h 0m</span>
       <span class="sep">•</span>
       <span id="topStatTotal">Total: 0h 0m</span>
+        <span class="sep">•</span>
+  <span id="topStatSessions">Sessions: 0</span>
     </div>
 
     <div class="time-wrap" id="timeWrap">
@@ -538,18 +600,6 @@ button:active,
 <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289Z" fill="#0F1729"/>
 </svg></button>
-
-      <div class="section" id="statsCard">
-  <h3>Statistics</h3>
-  <div class="stat-row">
-    <span>Focus: </span>
-    <span id="statFocus">0h 0min</span>
-  </div>
-  <div class="stat-row">
-    <span>Total Timer:</span>
-    <span id="statTotal">0h 0min</span>
-  </div>
-</div>
 
       <div class="section">
         <h3>Behavior</h3>
@@ -576,6 +626,24 @@ button:active,
       </div>
     </div>
   </div>
+  </div>
+
+<div class="modal" id="statsModal">
+  <div class="modal-content">
+    <button class="close-x icon-btn" id="closeStatsX" aria-label="Close">
+      <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+      <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289Z"
+          fill="#0F1729"/>
+      </svg>
+    </button>
+
+    <div class="section" id="statsCard">
+      <h3>Statistics</h3>      
+    </div>
+  </div>
+</div>
 
   <audio id="bellSound" preload="auto">
     <source src="bell-98033.mp3" type="audio/mpeg" />
@@ -583,8 +651,49 @@ button:active,
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
       const STORAGE_KEY = "sequenced_timer_state_v1";
-      const STATS_KEY = "sequenced_timer_stats_v1";
+      const STATS_KEY = "sequenced_timer_stats_v2";
+
+      function todayKey() {
+        return new Date().toISOString().slice(0, 10);
+      }
+
+      let statsDays = {};
+      let currentDay = todayKey();
+
+      function loadStats() {
+        const raw = localStorage.getItem(STATS_KEY);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.days) statsDays = parsed.days;
+          } catch {}
+        }
+
+        if (!statsDays[currentDay]) {
+  statsDays[currentDay] = { totalRunSeconds: 0, totalFocusSeconds: 0, focusSessions: 0 };
+}
+
+
+        totalRunSeconds = statsDays[currentDay].totalRunSeconds;
+        totalFocusSeconds = statsDays[currentDay].totalFocusSeconds;
+        totalFocusSessions = statsDays[currentDay].focusSessions || 0;
+      }
+
+      function saveStats() {
+        statsDays[currentDay] = {
+          totalRunSeconds,
+          totalFocusSeconds,
+          focusSessions: totalFocusSessions
+        };
+        localStorage.setItem(STATS_KEY, JSON.stringify({ days: statsDays }));
+      }
+
+      function getRecentDays(limit = 7) {
+        return Object.keys(statsDays).sort().reverse().slice(0, limit);
+      }
+
 
       let blocks = [
         { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
@@ -602,6 +711,7 @@ button:active,
       let enablePause = false;
       let totalRunSeconds = 0;
       let totalFocusSeconds = 0;
+      let totalFocusSessions = 0;
       let runStartTimestamp = null;
       let focusStartTimestamp = null;
       let sizeLevel = 100;
@@ -633,48 +743,7 @@ button:active,
       loadState();
 
 
-      function todayKey() {
-        return new Date().toISOString().slice(0, 10);
-      }
-
-      function loadStats() {
-        const raw = localStorage.getItem(STATS_KEY);
-        const today = todayKey();
-
-        if (!raw) {
-          totalRunSeconds = 0;
-          totalFocusSeconds = 0;
-          saveStats(today);
-          return;
-        }
-
-        try {
-          const s = JSON.parse(raw);
-
-          if (s.date !== today) {
-            totalRunSeconds = 0;
-            totalFocusSeconds = 0;
-            saveStats(today);
-            return;
-          }
-
-          if (typeof s.totalRunSeconds === "number") totalRunSeconds = s.totalRunSeconds;
-          if (typeof s.totalFocusSeconds === "number") totalFocusSeconds = s.totalFocusSeconds;
-        } catch {
-          totalRunSeconds = 0;
-          totalFocusSeconds = 0;
-          saveStats(today);
-        }
-      }
-
-      function saveStats(date = todayKey()) {
-        localStorage.setItem(STATS_KEY, JSON.stringify({
-          date,
-          totalRunSeconds,
-          totalFocusSeconds
-        }));
-      }
-
+      
       loadStats();
 
       let currentIndex = 0;
@@ -704,6 +773,22 @@ button:active,
       const topStats = document.getElementById("topStats");
       const topStatFocusEl = document.getElementById("topStatFocus");
       const topStatTotalEl = document.getElementById("topStatTotal");
+      const topStatSessionsEl = document.getElementById("topStatSessions");
+
+      const statsBtn = document.getElementById("stats");
+      const statsModal = document.getElementById("statsModal");
+      const closeStatsBtn = document.getElementById("closeStatsX");
+
+            statsBtn.onclick = () => {
+        if (statFocusEl) statFocusEl.textContent = formatHours(totalFocusSeconds);
+        if (statTotalEl) statTotalEl.textContent = formatHours(totalRunSeconds);
+        renderHistory();
+        statsModal.style.display = "flex";
+      };
+
+      closeStatsBtn.onclick = () => {
+        statsModal.style.display = "none";
+      };
 
       function playBell() {
         bellSound.currentTime = 0;
@@ -761,10 +846,13 @@ function measureBase() {
 
 
       function updateTopStats() {
-        topStatFocusEl.textContent = `Focus: ${formatHours(totalFocusSeconds)}`;
-        topStatTotalEl.textContent = `Total: ${formatHours(totalRunSeconds)}`;
-        topStats.style.display = running ? "none" : "flex";
+      topStatFocusEl.textContent = "Focus: " + formatHours(totalFocusSeconds);
+      topStatTotalEl.textContent = "Total: " + formatHours(totalRunSeconds);
+      if (topStatSessionsEl) {
+        topStatSessionsEl.textContent = "Sessions: " + totalFocusSessions;
       }
+      topStats.style.display = running ? "none" : "flex";
+    }
 
       function formatHours(sec) {
         const h = Math.floor(sec / 3600);
@@ -774,6 +862,7 @@ function measureBase() {
 
       function renderSequence() {
         editBtn.style.display = running ? "none" : "block";
+        statsBtn.style.display = running ? "none" : "block";
         sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
 
         [...sequenceEl.children].forEach((btn, i) => {
@@ -800,6 +889,14 @@ function measureBase() {
 
       function advanceBlock() {
         const now = Date.now();
+
+        const finishedBlock = blocks[currentIndex];
+        if (
+          finishedBlock &&
+          (finishedBlock.label || "").trim().toLowerCase() === "focus"
+        ) {
+          totalFocusSessions += 1;
+        }
 
         if (runStartTimestamp) {
           totalRunSeconds += Math.floor((now - runStartTimestamp) / 1000);
@@ -896,8 +993,6 @@ function measureBase() {
       });
 
       editBtn.onclick = () => {
-        statFocusEl.textContent = formatHours(totalFocusSeconds);
-        statTotalEl.textContent = formatHours(totalRunSeconds);
         enablePauseCheckbox.checked = enablePause;
         sizeSlider.value = sizeLevel;
         renderEditor();
@@ -1055,6 +1150,84 @@ function measureBase() {
         return r;
       }
 
+
+      function ensureHistoryContainer() {
+        const statsCard = document.getElementById("statsCard");
+        if (!statsCard) return;
+        if (document.getElementById("historyContainer")) return;
+
+        const divider = document.createElement("div");
+        divider.style.margin = "0.8rem 0";
+        divider.style.height = "1px";
+        divider.style.background = "rgba(255,255,255,0.08)";
+
+        const container = document.createElement("div");
+        container.id = "historyContainer";
+        container.style.display = "flex";
+        container.style.flexDirection = "column";
+        container.style.gap = "0.35rem";
+
+        statsCard.appendChild(divider);
+        statsCard.appendChild(container);
+      }
+
+      function renderHistory() {
+        ensureHistoryContainer();
+        const container = document.getElementById("historyContainer");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        const days = getRecentDays(7);
+        const yesterdayKey = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+        days.forEach(d => {
+          if (!statsDays[d]) return;
+          const day = statsDays[d];
+
+          let label = d;
+          if (d === currentDay) label = "Today";
+          else if (d === yesterdayKey) label = "Yesterday";
+
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.justifyContent = "space-between";
+          row.style.fontSize = "0.85rem";
+          row.style.opacity = "0.75";
+          row.style.cursor = "pointer";
+
+          const left = document.createElement("span");
+          left.textContent = label;
+
+          const right = document.createElement("span");
+          right.style.display = "flex";
+          right.style.gap = "0.7rem";
+
+          const focusSpan = document.createElement("span");
+          focusSpan.textContent = formatHours(day.totalFocusSeconds);
+
+          const totalSpan = document.createElement("span");
+          totalSpan.textContent = formatHours(day.totalRunSeconds);
+
+          const sessionsSpan = document.createElement("span");
+          sessionsSpan.textContent = String(day.focusSessions || 0); 
+
+          right.appendChild(focusSpan);
+          right.appendChild(totalSpan);
+          right.appendChild(sessionsSpan);
+
+          row.appendChild(left);
+          row.appendChild(right);
+
+          row.onclick = () => {
+            if (statFocusEl) statFocusEl.textContent = formatHours(day.totalFocusSeconds);
+            if (statTotalEl) statTotalEl.textContent = formatHours(day.totalRunSeconds);
+          };
+
+          container.appendChild(row);
+        });
+      }
+
       function readEditor() {
         const rows = [...blockList.children];
         const canon = {};
@@ -1073,6 +1246,7 @@ function measureBase() {
       applySize();
       loadBlock(0);
       updateTopStats();
+      
     });
   </script>
 </body>
