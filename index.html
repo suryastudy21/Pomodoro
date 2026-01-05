@@ -467,7 +467,6 @@ button:active,
 }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 	
@@ -513,6 +512,18 @@ button:active,
 <path fill-rule="evenodd" clip-rule="evenodd" d="M5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289Z" fill="#0F1729"/>
 </svg></button>
 
+      <div class="section" id="statsCard">
+  <h3>Statistics</h3>
+  <div class="stat-row">
+    <span>Focus: </span>
+    <span id="statFocus">0h 0min</span>
+  </div>
+  <div class="stat-row">
+    <span>Total Timer:</span>
+    <span id="statTotal">0h 0min</span>
+  </div>
+</div>
+
       <div class="section">
         <h3>Behavior</h3>
         <div class="setting">
@@ -536,12 +547,6 @@ button:active,
         <div id="blockList" class="block-list"></div>
         <button id="addBlock" class="add">＋ Add block</button>
       </div>
-      <div class="section">
-        <h3>Statistics</h3>
-        <div id="statsContent" class="setting">
-          Loading…
-        </div>
-      </div>
     </div>
   </div>
 
@@ -550,26 +555,9 @@ button:active,
   </audio>
 
   <script>
-    
-document.addEventListener("DOMContentLoaded", () => {
-
-      // ===== Supabase setup (REPLACE WITH YOUR KEYS) =====
-      const supabaseUrl = "https://pdhnteyywdyrwvmkzomh.supabase.co";
-      const supabaseAnonKey = "sb_publishable_20qMfOkduMMYsZFnfQuoOQ_FxFnBZs9";
-      const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
-      console.log("Supabase global:", typeof supabase);
-      console.log("Supabase client created:", supabaseClient);
-
-
-      let userId = null;
-      supabaseClient.auth.signInAnonymously().then(({ data }) => {
-        userId = data.user.id;
-      });
-
-      // ===== Session logging state =====
-      let currentSessionStart = null;
-
+    document.addEventListener("DOMContentLoaded", () => {
       const STORAGE_KEY = "sequenced_timer_state_v1";
+      const STATS_KEY = "sequenced_timer_stats_v1";
 
       let blocks = [
         { label: "Long Break", duration: 20 * 60, color: "#064e3b" },
@@ -585,6 +573,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ];
 
       let enablePause = false;
+      let totalRunSeconds = 0;
+      let totalFocusSeconds = 0;
+      let runStartTimestamp = null;
+      let focusStartTimestamp = null;
       let sizeLevel = 100;
       let userScale = 1;
       let baseWidth = 0;
@@ -613,6 +605,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
       loadState();
 
+      function loadStats() {
+        const raw = localStorage.getItem(STATS_KEY);
+        if (!raw) return;
+        try {
+          const s = JSON.parse(raw);
+          if (typeof s.totalRunSeconds === "number") totalRunSeconds = s.totalRunSeconds;
+          if (typeof s.totalFocusSeconds === "number") totalFocusSeconds = s.totalFocusSeconds;
+        } catch {}
+      }
+
+      function saveStats() {
+        localStorage.setItem(STATS_KEY, JSON.stringify({
+          totalRunSeconds,
+          totalFocusSeconds
+        }));
+      }
+
+      loadStats();
+
       let currentIndex = 0;
       let remainingSeconds = blocks[0].duration;
       let intervalId = null;
@@ -633,38 +644,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const closeEditorBtn = document.getElementById("closeEditorX");
       const enablePauseCheckbox = document.getElementById("enablePause");
       const sizeSlider = document.getElementById("sizeSlider");
-      const statsContent = document.getElementById("statsContent");
-      function formatDuration(seconds) {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        if (h > 0) return `${h}h ${m}m`;
-        return `${m}m`;
-      }
-
-      async function loadStats() {
-        if (!userId || !statsContent) return;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        statsContent.textContent = "Loading…";
-
-        const { data, error } = await supabaseClient
-          .from("sessions")
-          .select("duration")
-          .eq("block", "Focus")
-          .gte("start_time", today.toISOString());
-
-        if (error) {
-          statsContent.textContent = "Failed to load stats";
-          console.error(error);
-          return;
-        }
-
-        const totalSeconds = data.reduce((sum, row) => sum + row.duration, 0);
-        statsContent.textContent = `Focus today: ${formatDuration(totalSeconds)}`;
-      }
       const bellSound = document.getElementById("bellSound");
+      const statFocusEl = document.getElementById("statFocus");
+      const statTotalEl = document.getElementById("statTotal");
 
       function playBell() {
         bellSound.currentTime = 0;
@@ -720,6 +702,12 @@ function measureBase() {
         return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
       }
 
+      function formatHours(sec) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        return `${h}h ${m}m`;
+      }
+
       function renderSequence() {
         editBtn.style.display = running ? "none" : "block";
         sequenceEl.innerHTML = blocks.map((b, i) => `<button class="${i === currentIndex ? "active" : ""}">${b.label}</button>`).join(" → ");
@@ -746,40 +734,32 @@ function measureBase() {
       }
 
       function advanceBlock() {
-        if (!currentSessionStart || !userId) {
-          playBell();
-          if (currentIndex < blocks.length - 1) {
-            loadBlock(++currentIndex);
-          } else {
-            clearInterval(intervalId);
-            running = false;
-            renderSequence();
-          }
-          return;
-        }
-        if (currentSessionStart && userId) {
-          const end = new Date();
-          const duration = Math.floor((end - new Date(currentSessionStart)) / 1000);
+        const now = Date.now();
 
-          supabaseClient.from("sessions").insert({
-            user_id: userId,
-            block: blocks[currentIndex].label,
-            start_time: currentSessionStart,
-            end_time: end.toISOString(),
-            duration: duration
-          }).then(({ warns, error }) => {
-            if (error) console.error(error);
-          });
-
-          currentSessionStart = null;
+        if (runStartTimestamp) {
+          totalRunSeconds += Math.floor((now - runStartTimestamp) / 1000);
+          runStartTimestamp = now;
         }
 
+        if (focusStartTimestamp) {
+          totalFocusSeconds += Math.floor((now - focusStartTimestamp) / 1000);
+          focusStartTimestamp = null;
+        }
+
+        saveStats();
         playBell();
+
         if (currentIndex < blocks.length - 1) {
           loadBlock(++currentIndex);
+
+          const nextBlock = blocks[currentIndex];
+          if (running && nextBlock && nextBlock.label.toLowerCase() === "focus") {
+            focusStartTimestamp = now;
+          }
         } else {
           clearInterval(intervalId);
           running = false;
+          runStartTimestamp = null;
           renderSequence();
         }
       }
@@ -796,28 +776,33 @@ function measureBase() {
       timeEl.onclick = () => {
         if (running) {
           if (enablePause) return;
+
+          // Pause: accumulate elapsed time
+          const now = Date.now();
+          if (runStartTimestamp) {
+            totalRunSeconds += Math.floor((now - runStartTimestamp) / 1000);
+            runStartTimestamp = null;
+          }
+          if (focusStartTimestamp) {
+            totalFocusSeconds += Math.floor((now - focusStartTimestamp) / 1000);
+            focusStartTimestamp = null;
+          }
+
+          saveStats();
           clearInterval(intervalId);
           running = false;
-          // End session logging on manual stop
-          if (currentSessionStart && userId) {
-            const end = new Date();
-            const duration = Math.floor((end - new Date(currentSessionStart)) / 1000);
-
-            supabaseClient.from("sessions").insert({
-              user_id: userId,
-              block: blocks[currentIndex].label,
-              start_time: currentSessionStart,
-              end_time: end.toISOString(),
-              duration: duration
-            }).then(({ error }) => {
-              if (error) console.error(error);
-            });
-
-            currentSessionStart = null;
-          }
         } else {
-          // Start session logging only when the timer actually starts
-          currentSessionStart = new Date().toISOString();
+          // Play: start timers
+          const now = Date.now();
+          runStartTimestamp = now;
+
+          const currentBlock = blocks[currentIndex];
+          if (currentBlock && currentBlock.label.toLowerCase() === "focus") {
+            focusStartTimestamp = now;
+          } else {
+            focusStartTimestamp = null;
+          }
+
           tick();
           intervalId = setInterval(tick, 1000);
           running = true;
@@ -844,11 +829,12 @@ function measureBase() {
       });
 
       editBtn.onclick = () => {
+        statFocusEl.textContent = formatHours(totalFocusSeconds);
+        statTotalEl.textContent = formatHours(totalRunSeconds);
         enablePauseCheckbox.checked = enablePause;
         sizeSlider.value = sizeLevel;
         renderEditor();
         editor.style.display = "flex";
-        loadStats();
       };
 
       closeEditorBtn.onclick = () => {
